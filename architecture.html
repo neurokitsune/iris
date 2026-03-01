@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRIS Platform Architecture · Vega</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#07090F;--bg2:rgba(255,255,255,.03);--bg3:rgba(255,255,255,.06);
+  --text:#E8EAF6;--muted:#6B7A99;--border:rgba(255,255,255,.07);
+  --client:#4A6FA5;--entry:#5B8DD9;--backend:#7B9FD4;--orch:#9B72CF;
+  --ai:#52B788;--data:#74C69D;--msg:#E07A5F;--iot:#3A86FF;--ext:#8899AA;
+  --pi:#F4A261;--piui:#90BE6D;--elec:#F4A261;--device:#D4A574;
+  --warn:#E76F51;--radius:10px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+header{
+  flex-shrink:0;height:56px;padding:0 24px;display:flex;align-items:center;
+  justify-content:space-between;background:rgba(7,9,15,.96);
+  backdrop-filter:blur(16px);border-bottom:1px solid var(--border);z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{
+  width:32px;height:32px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;font-size:14px;font-weight:800;letter-spacing:-1px;color:#fff;
+  background:linear-gradient(135deg,#3A5A8C 0%,#7B5EA7 100%);
+}
+.logo-name{font-size:16px;font-weight:700;letter-spacing:-.3px}
+.logo-sep{width:1px;height:18px;background:var(--border);margin:0 2px}
+.logo-sub{font-size:11px;color:var(--muted)}
+nav{display:flex;gap:2px}
+.tab{
+  padding:6px 14px;border-radius:7px;border:none;background:transparent;
+  color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:.15s
+}
+.tab:hover{background:var(--bg3);color:var(--text)}
+.tab.on{background:rgba(74,111,165,.2);color:var(--client)}
+.live-badge{
+  display:flex;align-items:center;gap:6px;padding:4px 10px;
+  border-radius:20px;border:1px solid rgba(82,183,136,.3);
+  background:rgba(82,183,136,.08);font-size:10px;font-weight:600;
+  color:var(--ai);text-transform:uppercase;letter-spacing:.5px
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--ai);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── STATS BAR ── */
+.stats-bar{
+  flex-shrink:0;display:flex;border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.2);overflow-x:auto
+}
+.stat{
+  padding:10px 20px;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;gap:1px;min-width:110px;flex-shrink:0
+}
+.stat-n{font-size:18px;font-weight:700;letter-spacing:-.5px}
+.stat-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:600}
+
+/* ── MAIN LAYOUT ── */
+.main{flex:1;display:flex;overflow:hidden}
+
+/* ── LAYER NAV ── */
+.layer-nav{
+  width:188px;flex-shrink:0;border-right:1px solid var(--border);
+  overflow-y:auto;padding:12px 0;background:rgba(0,0,0,.15)
+}
+.lnav-section{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:12px 16px 6px;font-weight:700}
+.lnav-item{
+  display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;
+  font-size:11px;font-weight:500;color:var(--muted);transition:.15s;border-left:2px solid transparent
+}
+.lnav-item:hover{background:var(--bg2);color:var(--text)}
+.lnav-item.on{color:var(--text);background:var(--bg2)}
+.lnav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── CONTENT AREA ── */
+.content-area{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:24px 28px;display:none}
+.page.on{display:block}
+
+/* ── DETAIL PANEL ── */
+.detail{
+  width:320px;flex-shrink:0;border-left:1px solid var(--border);
+  background:rgba(0,0,0,.15);overflow-y:auto;transition:.25s
+}
+.detail-empty{
+  height:100%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;opacity:.3;user-select:none
+}
+.detail-empty-icon{font-size:40px}
+.detail-empty-text{font-size:12px;color:var(--muted);text-align:center;line-height:1.5}
+.detail-body{padding:20px;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.d-header{display:flex;align-items:flex-start;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.d-emoji{font-size:28px;line-height:1;flex-shrink:0;margin-top:2px}
+.d-name{font-size:16px;font-weight:700;line-height:1.2;margin-bottom:5px}
+.d-layer-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.d-section{margin-bottom:16px}
+.d-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:7px}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:2px 7px;font-size:10px;color:var(--text)}
+.feat-list{display:flex;flex-direction:column;gap:5px}
+.feat{display:flex;gap:7px;font-size:11px;color:var(--muted);line-height:1.4}
+.feat::before{content:"›";color:rgba(255,255,255,.25);flex-shrink:0}
+.warn-box{background:rgba(231,111,81,.1);border:1px solid rgba(231,111,81,.25);border-radius:6px;padding:8px 10px;margin-bottom:6px}
+.warn-label{font-size:9px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.warn-text{font-size:10px;color:rgba(231,111,81,.8);line-height:1.4}
+.conn-list{display:flex;flex-direction:column;gap:5px}
+.conn-row{display:flex;align-items:center;gap:7px;font-size:11px}
+.conn-dir{font-size:9px;color:var(--muted);width:20px;flex-shrink:0;text-align:right}
+.conn-chip{
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:4px;
+  padding:2px 7px;font-size:10px;cursor:pointer;transition:.15s;color:var(--text)
+}
+.conn-chip:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.25)}
+.conn-label{font-size:9px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.built-badge{display:flex;align-items:center;gap:6px;background:rgba(82,183,136,.08);border:1px solid rgba(82,183,136,.2);border-radius:6px;padding:7px 10px;font-size:10px;color:var(--ai);font-weight:500}
+
+/* ── LAYER CARD ── */
+.layer-section{
+  margin-bottom:16px;border-radius:var(--radius);overflow:hidden;
+  border:1px solid var(--border);
+}
+.layer-head{
+  display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+  font-size:12px;font-weight:600;
+}
+.layer-head-left{display:flex;align-items:center;gap:8px}
+.layer-head-emoji{font-size:14px}
+.layer-sub{font-size:10px;font-weight:400;opacity:.55;margin-left:2px}
+.layer-count{font-size:10px;opacity:.5;background:rgba(255,255,255,.1);padding:1px 7px;border-radius:10px}
+.layer-desc{font-size:10px;color:var(--muted);opacity:.7}
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1px;background:var(--border);border-top:1px solid var(--border)}
+
+/* ── COMPONENT CARD ── */
+.comp{
+  background:var(--bg);padding:12px 14px;cursor:pointer;transition:.15s;
+  position:relative;min-height:72px;
+}
+.comp:hover{background:var(--bg3)}
+.comp.on{background:rgba(74,111,165,.15)!important;outline:1px inset rgba(74,111,165,.4)}
+.comp-emoji{font-size:16px;display:block;margin-bottom:5px}
+.comp-name{font-size:11px;font-weight:600;line-height:1.3;margin-bottom:3px}
+.comp-tech{font-size:9px;color:var(--muted);line-height:1.4}
+.comp-warn{position:absolute;top:9px;right:9px;width:5px;height:5px;border-radius:50%;background:var(--warn);animation:pulse 2s infinite}
+
+/* ── FLOW CONNECTOR ── */
+.flow-conn{display:flex;justify-content:center;padding:6px 0}
+.flow-arr{display:flex;flex-direction:column;align-items:center;gap:2px}
+.flow-line{width:1px;height:16px;background:linear-gradient(to bottom,rgba(255,255,255,.05),rgba(255,255,255,.15))}
+.flow-tip{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid rgba(255,255,255,.15)}
+
+/* ── OVERVIEW PAGE ── */
+.ov-hero{text-align:center;padding:40px 24px;border-radius:var(--radius);background:linear-gradient(135deg,rgba(26,26,46,.8),rgba(15,52,96,.5));border:1px solid rgba(74,111,165,.2);margin-bottom:28px}
+.ov-headline{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px;background:linear-gradient(135deg,#7BA7D4,#9B72CF,#52B788);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ov-sub{font-size:13px;color:var(--muted);max-width:480px;margin:0 auto;line-height:1.6}
+.ov-pills{display:flex;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+.pill{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px}
+
+.ov-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:12px}
+.ov-journey{margin-bottom:28px}
+.journey-steps{display:flex;align-items:stretch;gap:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+.j-step{
+  flex:1;padding:16px 12px;text-align:center;background:var(--bg2);position:relative;
+  border-right:1px solid var(--border);transition:.2s;cursor:default
+}
+.j-step:last-child{border-right:none}
+.j-step:hover{background:var(--bg3)}
+.j-step-num{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.j-step-icon{font-size:22px;margin-bottom:6px}
+.j-step-name{font-size:11px;font-weight:600;line-height:1.3;margin-bottom:4px}
+.j-step-desc{font-size:9px;color:var(--muted);line-height:1.4}
+.j-arr{position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:16px;height:16px;background:var(--bg);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;z-index:1}
+
+.value-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.value-card{padding:16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg2)}
+.value-icon{font-size:20px;margin-bottom:8px}
+.value-title{font-size:12px;font-weight:700;margin-bottom:4px}
+.value-desc{font-size:11px;color:var(--muted);line-height:1.5}
+
+.region-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px}
+.region-card{padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);text-align:center}
+.region-flag{font-size:22px;margin-bottom:6px}
+.region-name{font-size:11px;font-weight:600;margin-bottom:2px}
+.region-url{font-size:9px;color:var(--muted)}
+
+/* ── FLOWS PAGE ── */
+.flow-header{margin-bottom:24px}
+.flow-header h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.flow-header p{font-size:12px;color:var(--muted)}
+.flow-tabs{display:flex;gap:6px;margin-bottom:24px}
+.ftab{
+  padding:7px 16px;border-radius:7px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-size:11px;font-weight:500;cursor:pointer;transition:.15s
+}
+.ftab:hover{background:var(--bg2);color:var(--text)}
+.ftab.on{background:rgba(74,111,165,.15);color:var(--client);border-color:rgba(74,111,165,.3)}
+.flow-diagram{display:none}
+.flow-diagram.on{display:block}
+.flow-steps{display:flex;flex-direction:column;gap:0}
+.fs{
+  display:flex;gap:16px;padding:16px;border-left:2px solid var(--border);
+  margin-left:24px;position:relative;cursor:default;transition:.15s
+}
+.fs:hover{background:var(--bg2);border-radius:0 8px 8px 0}
+.fs-num{
+  position:absolute;left:-25px;width:18px;height:18px;border-radius:50%;
+  border:2px solid;display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;background:var(--bg);top:18px;flex-shrink:0
+}
+.fs-icon{font-size:20px;flex-shrink:0;margin-top:2px}
+.fs-body{flex:1}
+.fs-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.fs-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px}
+.fs-chips{display:flex;flex-wrap:wrap;gap:5px}
+.fs-chip{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── TECH PAGE ── */
+.tech-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+.tech-card{border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
+.tech-card-head{padding:12px 16px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.tech-card-body{padding:12px 16px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border)}
+.tech-row{display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.tech-row-name{color:var(--muted)}
+.tech-row-val{font-weight:500;color:var(--text)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.15)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){
+  .detail{width:280px}
+  .layer-nav{width:160px}
+  .lnav-item{font-size:10px;padding:7px 12px}
+}
+@media(max-width:900px){
+  .layer-nav{display:none!important}
+  .detail{width:260px}
+}
+@media(max-width:700px){
+  .detail{position:fixed;right:0;top:108px;bottom:0;z-index:50;
+    width:100%;max-width:340px;box-shadow:-8px 0 32px rgba(0,0,0,.5)}
+  .stats-bar{display:none}
+  .page{padding:16px}
+  .value-grid,.tech-grid{grid-template-columns:1fr}
+  .region-grid{grid-template-columns:repeat(2,1fr)}
+  .journey-steps{flex-wrap:wrap}
+  .j-step{min-width:140px;flex:1 1 140px}
+}
+</style>
+</head>
+<body>
+
+<!-- ───── HEADER ───── -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">IR</div>
+    <div class="logo-name">IRIS Platform</div>
+    <div class="logo-sep"></div>
+    <div class="logo-sub">Architecture Overview · Vega</div>
+  </div>
+  <nav>
+    <button class="tab on" onclick="showPage('overview',this)">Overview</button>
+    <button class="tab" onclick="showPage('arch',this)">Architecture</button>
+    <button class="tab" onclick="showPage('flows',this)">Key Flows</button>
+    <button class="tab" onclick="showPage('tech',this)">Technology</button>
+  </nav>
+  <div class="live-badge"><div class="live-dot"></div>Live Diagram</div>
+</header>
+
+<!-- ───── STATS BAR ───── -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-n" style="color:var(--ai)">40+</div><div class="stat-l">Services & Components</div></div>
+  <div class="stat"><div class="stat-n" style="color:var(--iot)">4</div><div class="stat-l">AWS Regions</div></div>
+  <div class="stat"><div class="stat-n" style="color:var(--pi)">6</div><div class="stat-l">Smart Devices / Pod</div></div>
+  <div class="stat"><div class="stat-n" style="color:var(--orch)">8</div><div class="stat-l">Backend Microservices</div></div>
+  <div class="stat"><div class="stat-n" style="color:var(--msg)">3</div><div class="stat-l">Voice Languages</div></div>
+  <div class="stat"><div class="stat-n" style="color:var(--ext)">5</div><div class="stat-l">External Integrations</div></div>
+  <div class="stat"><div class="stat-n" style="color:var(--client)">3</div><div class="stat-l">Client Applications</div></div>
+  <div class="stat"><div class="stat-n" style="color:var(--piui)">100%</div><div class="stat-l">Offline Capable</div></div>
+</div>
+
+<!-- ───── MAIN ───── -->
+<div class="main">
+
+  <!-- LAYER NAVIGATION -->
+  <div class="layer-nav" id="layerNav"></div>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+
+    <!-- ─── OVERVIEW PAGE ─── -->
+    <div class="page on" id="page-overview">
+      <div class="ov-hero">
+        <div class="ov-headline">IRIS · Intelligent Room & Interaction System</div>
+        <div class="ov-sub">A fully integrated cloud-to-hardware platform powering smart private pods across the GCC region. Seamless booking, AI voice control, real-time IoT, and cultural compliance — all in one system.</div>
+        <div class="ov-pills">
+          <span class="pill" style="background:rgba(74,111,165,.2);color:var(--client)">Built by SumatoSoft</span>
+          <span class="pill" style="background:rgba(82,183,136,.2);color:var(--ai)">AWS Native</span>
+          <span class="pill" style="background:rgba(155,114,207,.2);color:var(--orch)">GCC Data Residency</span>
+          <span class="pill" style="background:rgba(244,162,97,.2);color:var(--pi)">IoT-First Architecture</span>
+        </div>
+      </div>
+
+      <div class="ov-journey">
+        <div class="ov-section-title">Customer Journey · From App to Pod</div>
+        <div class="journey-steps">
+          <div class="j-step">
+            <div class="j-step-num">Step 1</div>
+            <div class="j-step-icon">📱</div>
+            <div class="j-step-name">Book via App</div>
+            <div class="j-step-desc">Select pod, time slot & pay via Mada / Apple Pay</div>
+            <div class="j-arr">→</div>
+          </div>
+          <div class="j-step">
+            <div class="j-step-num">Step 2</div>
+            <div class="j-step-icon">☁️</div>
+            <div class="j-step-name">Cloud Confirms</div>
+            <div class="j-step-desc">Backend reserves slot, schedules pod wake-up T-2min</div>
+            <div class="j-arr">→</div>
+          </div>
+          <div class="j-step">
+            <div class="j-step-num">Step 3</div>
+            <div class="j-step-icon">🔓</div>
+            <div class="j-step-name">Pod Unlocks</div>
+            <div class="j-step-desc">HVAC, lighting & temperature pre-set for arrival</div>
+            <div class="j-arr">→</div>
+          </div>
+          <div class="j-step">
+            <div class="j-step-num">Step 4</div>
+            <div class="j-step-icon">🎙</div>
+            <div class="j-step-name">IRIS Voice</div>
+            <div class="j-step-desc">Control environment in EN / AR. AI understands intent</div>
+            <div class="j-arr">→</div>
+          </div>
+          <div class="j-step">
+            <div class="j-step-num">Step 5</div>
+            <div class="j-step-icon">☕</div>
+            <div class="j-step-name">Order F&B</div>
+            <div class="j-step-desc">Voice or touch ordering via Robot Barista integration</div>
+            <div class="j-arr">→</div>
+          </div>
+          <div class="j-step">
+            <div class="j-step-num">Step 6</div>
+            <div class="j-step-icon">🧹</div>
+            <div class="j-step-name">Auto Disinfect</div>
+            <div class="j-step-desc">Blue-light + ionization cycle runs before next booking</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ov-section-title">Why IRIS Stands Out</div>
+      <div class="value-grid">
+        <div class="value-card">
+          <div class="value-icon">🕌</div>
+          <div class="value-title">Cultural Intelligence</div>
+          <div class="value-desc">Adhan prayer time muting, Ramadan scheduling rules, RTL Arabic UI, GCC-compliant VAT invoicing with TRN per entity.</div>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🌐</div>
+          <div class="value-title">Multi-Region Architecture</div>
+          <div class="value-desc">Data stays in-country. Separate AWS stacks for UAE, Saudi, Bahrain, and US. Full PDPL and local data residency compliance.</div>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🎙</div>
+          <div class="value-title">AI Voice Interface</div>
+          <div class="value-desc">AWS Transcribe + Claude (Bedrock) + AWS Polly. Bounded intent processing — only pod-related commands are executed.</div>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">📡</div>
+          <div class="value-title">Resilient IoT</div>
+          <div class="value-desc">Raspberry Pi runs fully offline during network drops. Local state machine maintains session, disinfection, and wake/sleep cycles.</div>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🔒</div>
+          <div class="value-title">Zero-Trust Hardware</div>
+          <div class="value-desc">Mobile app reads Device Shadow directly but writes ONLY through Backend API. All commands authenticated and ordered via FIFO SQS.</div>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">⚡</div>
+          <div class="value-title">Smart Disinfection</div>
+          <div class="value-desc">Automated UV blue-light and ionization cycle after each session. Presence sensor confirms pod is empty before cycle starts.</div>
+        </div>
+      </div>
+
+      <div class="ov-section-title">Deployment Regions</div>
+      <div class="region-grid">
+        <div class="region-card">
+          <div class="region-flag">🇦🇪</div>
+          <div class="region-name">UAE</div>
+          <div class="region-url">api.ae.vel.ai</div>
+        </div>
+        <div class="region-card">
+          <div class="region-flag">🇸🇦</div>
+          <div class="region-name">Saudi Arabia</div>
+          <div class="region-url">api.sa.vel.ai</div>
+        </div>
+        <div class="region-card">
+          <div class="region-flag">🇧🇭</div>
+          <div class="region-name">Bahrain</div>
+          <div class="region-url">api.bh.vel.ai</div>
+        </div>
+        <div class="region-card">
+          <div class="region-flag">🇺🇸</div>
+          <div class="region-name">United States</div>
+          <div class="region-url">api.us.vel.ai</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── ARCHITECTURE PAGE ─── -->
+    <div class="page" id="page-arch">
+      <div id="arch-layers"></div>
+    </div>
+
+    <!-- ─── FLOWS PAGE ─── -->
+    <div class="page" id="page-flows">
+      <div class="flow-header">
+        <h2>Key System Flows</h2>
+        <p>Step-by-step walk-through of the most critical data and control paths in IRIS.</p>
+      </div>
+      <div class="flow-tabs">
+        <button class="ftab on" onclick="showFlow('booking',this)">📅 Booking & Entry</button>
+        <button class="ftab" onclick="showFlow('voice',this)">🎙 Voice Command</button>
+        <button class="ftab" onclick="showFlow('disinfect',this)">🧹 Session End</button>
+        <button class="ftab" onclick="showFlow('iot',this)">📡 IoT Data Path</button>
+      </div>
+
+      <div class="flow-diagram on" id="flow-booking">
+        <div class="flow-steps">
+          <div class="fs"><div class="fs-num" style="border-color:var(--client);color:var(--client)">1</div><div class="fs-icon">📱</div><div class="fs-body"><div class="fs-title">Customer selects pod & time slot</div><div class="fs-desc">User opens Mobile App, browses pod availability, selects a slot, and proceeds to payment. The app sends the booking request via HTTPS through CloudFront.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(74,111,165,.15);color:var(--client)">Mobile App</span><span class="fs-chip" style="background:rgba(91,141,217,.15);color:var(--entry)">CloudFront</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--entry);color:var(--entry)">2</div><div class="fs-icon">🔐</div><div class="fs-body"><div class="fs-title">Authentication & authorisation</div><div class="fs-desc">API Gateway validates the JWT token with Cognito. Route 53 routes the request to the correct regional AWS stack (UAE, Saudi, etc.) based on geographic DNS.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(91,141,217,.15);color:var(--entry)">Route 53</span><span class="fs-chip" style="background:rgba(91,141,217,.15);color:var(--entry)">API Gateway</span><span class="fs-chip" style="background:rgba(91,141,217,.15);color:var(--entry)">Cognito</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--backend);color:var(--backend)">3</div><div class="fs-icon">📅</div><div class="fs-body"><div class="fs-title">Booking Service checks availability & cultural rules</div><div class="fs-desc">Booking Service validates slot availability, applies Adhan-aware scheduling (no sessions during prayer times if configured), and checks Ramadan schedule rules via Regional Config Service.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(123,159,212,.15);color:var(--backend)">Booking Service</span><span class="fs-chip" style="background:rgba(123,159,212,.15);color:var(--backend)">Regional Config</span><span class="fs-chip" style="background:rgba(136,153,170,.15);color:var(--ext)">Adhan API</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--backend);color:var(--backend)">4</div><div class="fs-icon">💳</div><div class="fs-body"><div class="fs-title">Payment processed via Checkout.com</div><div class="fs-desc">Payment Service initiates a tokenized charge through Checkout.com. Supports Mada, Benefit Pay, Apple Pay, and Google Pay. Chargebee handles subscription metering and VAT invoice generation with GCC TRN.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(123,159,212,.15);color:var(--backend)">Payment Service</span><span class="fs-chip" style="background:rgba(136,153,170,.15);color:var(--ext)">Checkout.com</span><span class="fs-chip" style="background:rgba(136,153,170,.15);color:var(--ext)">Chargebee</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--orch);color:var(--orch)">5</div><div class="fs-icon">🔄</div><div class="fs-body"><div class="fs-title">Session State Machine created → Pod pre-warm scheduled</div><div class="fs-desc">Session Service creates a state machine entry (booked state). Pod Lifecycle Manager schedules a wake sequence via EventBridge to trigger exactly T-2 minutes before the session start.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(155,114,207,.15);color:var(--orch)">Session SM</span><span class="fs-chip" style="background:rgba(155,114,207,.15);color:var(--orch)">Pod Lifecycle Manager</span><span class="fs-chip" style="background:rgba(224,122,95,.15);color:var(--msg)">EventBridge</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--iot);color:var(--iot)">6</div><div class="fs-icon">📡</div><div class="fs-body"><div class="fs-title">Wake command sent to pod via IoT Core</div><div class="fs-desc">EventBridge triggers an MQTT message to the pod's Raspberry Pi via AWS IoT Core MQTT Broker. Greengrass agent on the Pi receives the desired state update and begins the wake sequence.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">MQTT Broker</span><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">Device Shadow</span><span class="fs-chip" style="background:rgba(244,162,97,.15);color:var(--pi)">Greengrass</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--pi);color:var(--pi)">7</div><div class="fs-icon">🌡️</div><div class="fs-body"><div class="fs-title">Pod hardware initialises</div><div class="fs-desc">Device Manager translates IRIS commands into Electric Set protocol. HVAC sets temperature, Privacy Glass clears, Availability Halo turns amber (pre-warm). Access lock primes for customer's arrival.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(244,162,97,.15);color:var(--pi)">Device Manager</span><span class="fs-chip" style="background:rgba(244,162,97,.15);color:var(--elec)">Electric Set</span><span class="fs-chip" style="background:rgba(212,165,116,.15);color:var(--device)">HVAC · Glass · Lock</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--ai);color:var(--ai)">8</div><div class="fs-icon">🔓</div><div class="fs-body"><div class="fs-title">Customer arrives → Pod unlocks → Session goes active</div><div class="fs-desc">Customer taps app or NFC at pod. Access Control unlocks. Presence sensor confirms occupancy. Session State Machine transitions to active. Real-time state updates flow to Mobile App via Device Shadow.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(82,183,136,.15);color:var(--ai)">Session Active</span><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">Presence → IoT Rules</span><span class="fs-chip" style="background:rgba(74,111,165,.15);color:var(--client)">Mobile App UI updates</span></div></div></div>
+        </div>
+      </div>
+
+      <div class="flow-diagram" id="flow-voice">
+        <div class="flow-steps">
+          <div class="fs"><div class="fs-num" style="border-color:var(--client);color:var(--client)">1</div><div class="fs-icon">🗣️</div><div class="fs-body"><div class="fs-title">User speaks to IRIS</div><div class="fs-desc">Customer speaks a command in English or Arabic. The Mobile App or Kiosk App begins streaming the audio in real-time.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(74,111,165,.15);color:var(--client)">Mobile App</span><span class="fs-chip" style="background:rgba(144,190,109,.15);color:var(--piui)">Kiosk App</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--ai);color:var(--ai)">2</div><div class="fs-icon">🎤</div><div class="fs-body"><div class="fs-title">AWS Transcribe converts speech to text</div><div class="fs-desc">Streaming STT with automatic noise threshold. Supports EN, AR, ES. Confidence scoring applied — if confidence is below threshold, system falls back to touch mode UI. Audio is stored in-region S3 bucket for audit.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(82,183,136,.15);color:var(--ai)">AWS Transcribe</span><span class="fs-chip" style="background:rgba(116,198,157,.15);color:var(--data)">S3 (in-region)</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--backend);color:var(--backend)">3</div><div class="fs-icon">🎯</div><div class="fs-body"><div class="fs-title">Intent Router classifies the request</div><div class="fs-desc">The transcript text is sent to the Intent Router. It performs initial NLU dispatch and bounds the action space. Off-topic queries (outside pod control) are filtered here before reaching Bedrock — reducing cost and preventing misuse.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(123,159,212,.15);color:var(--backend)">Intent Router</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--ai);color:var(--ai)">4</div><div class="fs-icon">🧠</div><div class="fs-body"><div class="fs-title">AWS Bedrock (Claude) processes bounded intent</div><div class="fs-desc">The transcript plus session context (pod state, user preferences, current session) is sent to Claude on AWS Bedrock. Claude classifies the intent and returns a structured action object. Off-topic requests receive predefined H1/H2 redirects.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(82,183,136,.15);color:var(--ai)">AWS Bedrock · Claude</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--backend);color:var(--backend)">5</div><div class="fs-icon">📡</div><div class="fs-body"><div class="fs-title">Device command issued to pod</div><div class="fs-desc">The structured action (e.g. "set temperature to 21°C") is sent by Device Command Service to SQS FIFO queue. The command flows via EventBridge → MQTT → Raspberry Pi → Electric Set → Physical Device.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(123,159,212,.15);color:var(--backend)">Device Command Service</span><span class="fs-chip" style="background:rgba(224,122,95,.15);color:var(--msg)">SQS FIFO</span><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">MQTT</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--ai);color:var(--ai)">6</div><div class="fs-icon">🔊</div><div class="fs-body"><div class="fs-title">AWS Polly delivers spoken response</div><div class="fs-desc">Bedrock's natural language response is sent to AWS Polly for TTS synthesis. Voice is EN-ZA (South African female). Whisper mode is automatically applied for privacy pod types. Audio streams back to the app.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(82,183,136,.15);color:var(--ai)">AWS Polly</span><span class="fs-chip" style="background:rgba(74,111,165,.15);color:var(--client)">Mobile / Kiosk App</span></div></div></div>
+        </div>
+      </div>
+
+      <div class="flow-diagram" id="flow-disinfect">
+        <div class="flow-steps">
+          <div class="fs"><div class="fs-num" style="border-color:var(--orch);color:var(--orch)">1</div><div class="fs-icon">🚪</div><div class="fs-body"><div class="fs-title">Session ends — grace period begins</div><div class="fs-desc">Session Service detects session timeout or manual checkout. State Machine transitions: active → grace period. Customer has a configurable window to gather belongings. Notification sent to mobile app.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(155,114,207,.15);color:var(--orch)">Session SM</span><span class="fs-chip" style="background:rgba(123,159,212,.15);color:var(--backend)">Notification Service</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--iot);color:var(--iot)">2</div><div class="fs-icon">👁️</div><div class="fs-body"><div class="fs-title">Presence sensor confirms pod is empty</div><div class="fs-desc">CO₂ and presence sensors (Bevenic) continuously report telemetry via MQTT → IoT Rules Engine → DynamoDB. Rules Engine detects occupancy=false and triggers Presence event → Session State Machine.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(212,165,116,.15);color:var(--device)">Bevenic Sensors</span><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">IoT Rules Engine</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--orch);color:var(--orch)">3</div><div class="fs-icon">🧹</div><div class="fs-body"><div class="fs-title">Disinfection State Machine activates</div><div class="fs-desc">Trigger condition met: session_closed AND presence=empty. DSM initiates the disinfection cycle. If a motion event re-triggers (someone enters), the cycle is safely delayed. Privacy Glass goes opaque.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(155,114,207,.15);color:var(--orch)">Disinfection SM</span><span class="fs-chip" style="background:rgba(212,165,116,.15);color:var(--device)">Sonte Glass → Opaque</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--pi);color:var(--pi)">4</div><div class="fs-icon">🔵</div><div class="fs-body"><div class="fs-title">Blue-light + ionization cycle runs</div><div class="fs-desc">Commands flow via MQTT → Raspberry Pi → Electric Set → Baumedi unit. UV blue-light activates for the configured duration. Ionization unit runs in parallel. HVAC continues running to clear air.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(244,162,97,.15);color:var(--pi)">Raspberry Pi</span><span class="fs-chip" style="background:rgba(212,165,116,.15);color:var(--device)">Baumedi · HVAC</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--orch);color:var(--orch)">5</div><div class="fs-icon">✅</div><div class="fs-body"><div class="fs-title">Pod resets → Ready for next booking</div><div class="fs-desc">Disinfection cycle completes. Pod Lifecycle Manager resets all device states to defaults. Availability Halo turns green. Device Shadow updated. Pod is available for next booking immediately.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(155,114,207,.15);color:var(--orch)">Pod Lifecycle Manager</span><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">Device Shadow updated</span><span class="fs-chip" style="background:rgba(212,165,116,.15);color:var(--device)">Halo → Green</span></div></div></div>
+        </div>
+      </div>
+
+      <div class="flow-diagram" id="flow-iot">
+        <div class="flow-steps">
+          <div class="fs"><div class="fs-num" style="border-color:var(--pi);color:var(--pi)">1</div><div class="fs-icon">🌡️</div><div class="fs-body"><div class="fs-title">Sensor data measured by Bevenic (temp / CO₂)</div><div class="fs-desc">Bevenic smart device continuously measures temperature and CO₂ levels inside the pod. Readings are sent to the Electric Set control board which relays them to the Device Manager on the Raspberry Pi.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(212,165,116,.15);color:var(--device)">Bevenic</span><span class="fs-chip" style="background:rgba(244,162,97,.15);color:var(--elec)">Electric Set</span><span class="fs-chip" style="background:rgba(244,162,97,.15);color:var(--pi)">Device Manager</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--pi);color:var(--pi)">2</div><div class="fs-icon">📤</div><div class="fs-body"><div class="fs-title">Telemetry published via Greengrass → IoT Core</div><div class="fs-desc">Device Manager publishes the telemetry to the local Greengrass agent. Greengrass relays it over MQTT TLS to AWS IoT Core using the topic pattern: vel/{region}/{site}/{cluster}/{pod}/{device}. QoS 1 ensures at-least-once delivery.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(244,162,97,.15);color:var(--pi)">Greengrass v2</span><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">MQTT · TLS 1.2+ · QoS 1</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--iot);color:var(--iot)">3</div><div class="fs-icon">⚙️</div><div class="fs-body"><div class="fs-title">IoT Rules Engine routes telemetry</div><div class="fs-desc">Rules Engine applies SQL-like rules: telemetry snapshots go to DynamoDB, anomaly alerts go to SNS (which triggers Ops Dashboard notifications), presence events trigger the Session State Machine transition.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">IoT Rules Engine</span><span class="fs-chip" style="background:rgba(116,198,157,.15);color:var(--data)">DynamoDB</span><span class="fs-chip" style="background:rgba(224,122,95,.15);color:var(--msg)">SNS alerts</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--iot);color:var(--iot)">4</div><div class="fs-icon">🪞</div><div class="fs-body"><div class="fs-title">Device Shadow updated with reported state</div><div class="fs-desc">The Raspberry Pi reports its current state to the Device Shadow (reported state). The Shadow stores both desired (what cloud wants) and reported (what device has confirmed) states. Delta sync happens automatically on reconnect.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">Device Shadow</span><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">Device Registry</span></div></div></div>
+          <div class="fs"><div class="fs-num" style="border-color:var(--client);color:var(--client)">5</div><div class="fs-icon">📱</div><div class="fs-body"><div class="fs-title">Mobile App reads Shadow directly for real-time UI</div><div class="fs-desc">The Mobile App uses the AWS IoT SDK to read the Device Shadow directly (not via the backend) for real-time sensor display — temperature, CO₂ level, light state. This reduces API latency and backend load for UI updates.</div><div class="fs-chips"><span class="fs-chip" style="background:rgba(74,111,165,.15);color:var(--client)">Mobile App</span><span class="fs-chip" style="background:rgba(58,134,255,.15);color:var(--iot)">AWS IoT SDK (read-only)</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TECH PAGE ─── -->
+    <div class="page" id="page-tech">
+      <div class="flow-header" style="margin-bottom:20px">
+        <h2>Technology Stack</h2>
+        <p>Complete overview of all platforms, frameworks, and AWS services used in IRIS.</p>
+      </div>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-card-head" style="background:rgba(74,111,165,.1);color:var(--client)">🖥 Client Applications</div>
+          <div class="tech-card-body">
+            <div class="tech-row"><span class="tech-row-name">Mobile App</span><span class="tech-row-val">React Native · iOS + Android</span></div>
+            <div class="tech-row"><span class="tech-row-name">Kiosk App</span><span class="tech-row-val">React Native Web (shared codebase)</span></div>
+            <div class="tech-row"><span class="tech-row-name">Ops Dashboard</span><span class="tech-row-val">React / Next.js</span></div>
+            <div class="tech-row"><span class="tech-row-name">Admin App</span><span class="tech-row-val">React / Next.js</span></div>
+            <div class="tech-row"><span class="tech-row-name">Kiosk Runtime</span><span class="tech-row-val">Chromium · Kiosk Mode</span></div>
+            <div class="tech-row"><span class="tech-row-name">RTL Support</span><span class="tech-row-val">Arabic (right-to-left)</span></div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-head" style="background:rgba(91,141,217,.1);color:var(--entry)">🌐 AWS Entry & Auth</div>
+          <div class="tech-card-body">
+            <div class="tech-row"><span class="tech-row-name">CDN / DDoS</span><span class="tech-row-val">CloudFront + WAF</span></div>
+            <div class="tech-row"><span class="tech-row-name">DNS Routing</span><span class="tech-row-val">Route 53 Geographic Routing</span></div>
+            <div class="tech-row"><span class="tech-row-name">API</span><span class="tech-row-val">API Gateway (REST + WebSocket)</span></div>
+            <div class="tech-row"><span class="tech-row-name">Auth</span><span class="tech-row-val">Cognito · JWT · MFA · OAuth 2.0</span></div>
+            <div class="tech-row"><span class="tech-row-name">Regions</span><span class="tech-row-val">UAE · Saudi · Bahrain · US-East</span></div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-head" style="background:rgba(123,159,212,.1);color:var(--backend)">⚙️ IRIS Backend</div>
+          <div class="tech-card-body">
+            <div class="tech-row"><span class="tech-row-name">Runtime</span><span class="tech-row-val">Node.js / TypeScript</span></div>
+            <div class="tech-row"><span class="tech-row-name">Compute</span><span class="tech-row-val">AWS ECS Fargate (serverless containers)</span></div>
+            <div class="tech-row"><span class="tech-row-name">Architecture</span><span class="tech-row-val">Microservices (8 services)</span></div>
+            <div class="tech-row"><span class="tech-row-name">Push</span><span class="tech-row-val">APNs (iOS) + FCM (Android)</span></div>
+            <div class="tech-row"><span class="tech-row-name">Built by</span><span class="tech-row-val">SumatoSoft</span></div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-head" style="background:rgba(82,183,136,.1);color:var(--ai)">🎙 Voice & AI</div>
+          <div class="tech-card-body">
+            <div class="tech-row"><span class="tech-row-name">STT</span><span class="tech-row-val">AWS Transcribe (Streaming)</span></div>
+            <div class="tech-row"><span class="tech-row-name">AI / NLU</span><span class="tech-row-val">AWS Bedrock · Anthropic Claude</span></div>
+            <div class="tech-row"><span class="tech-row-name">TTS</span><span class="tech-row-val">AWS Polly · EN-ZA voice</span></div>
+            <div class="tech-row"><span class="tech-row-name">Languages</span><span class="tech-row-val">English · Arabic · Spanish</span></div>
+            <div class="tech-row"><span class="tech-row-name">Data residency</span><span class="tech-row-val">In-region processing</span></div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-head" style="background:rgba(116,198,157,.1);color:var(--data)">🗃 Data Layer</div>
+          <div class="tech-card-body">
+            <div class="tech-row"><span class="tech-row-name">Relational DB</span><span class="tech-row-val">Amazon RDS PostgreSQL</span></div>
+            <div class="tech-row"><span class="tech-row-name">Real-time / NoSQL</span><span class="tech-row-val">Amazon DynamoDB</span></div>
+            <div class="tech-row"><span class="tech-row-name">Cache / Pub-Sub</span><span class="tech-row-val">ElastiCache Redis</span></div>
+            <div class="tech-row"><span class="tech-row-name">Object Storage</span><span class="tech-row-val">Amazon S3 (per-country)</span></div>
+            <div class="tech-row"><span class="tech-row-name">Isolation</span><span class="tech-row-val">Siloed per AWS region/country</span></div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-head" style="background:rgba(58,134,255,.1);color:var(--iot)">☁️ IoT Platform</div>
+          <div class="tech-card-body">
+            <div class="tech-row"><span class="tech-row-name">Connectivity</span><span class="tech-row-val">AWS IoT Core · MQTT · TLS 1.2+</span></div>
+            <div class="tech-row"><span class="tech-row-name">Delivery</span><span class="tech-row-val">QoS 1 (at-least-once)</span></div>
+            <div class="tech-row"><span class="tech-row-name">State mgmt</span><span class="tech-row-val">Device Shadows (desired / reported)</span></div>
+            <div class="tech-row"><span class="tech-row-name">Rules</span><span class="tech-row-val">IoT Rules Engine (SQL-based)</span></div>
+            <div class="tech-row"><span class="tech-row-name">Edge agent</span><span class="tech-row-val">AWS IoT Greengrass v2</span></div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-head" style="background:rgba(244,162,97,.1);color:var(--pi)">🍓 Edge Hardware</div>
+          <div class="tech-card-body">
+            <div class="tech-row"><span class="tech-row-name">SBC</span><span class="tech-row-val">Raspberry Pi CM4</span></div>
+            <div class="tech-row"><span class="tech-row-name">Runtime</span><span class="tech-row-val">Node.js / TypeScript</span></div>
+            <div class="tech-row"><span class="tech-row-name">Deployment</span><span class="tech-row-val">Per pod (solo) or per cluster</span></div>
+            <div class="tech-row"><span class="tech-row-name">Offline</span><span class="tech-row-val">Local SM runs if cloud drops</span></div>
+            <div class="tech-row"><span class="tech-row-name">HW Interface</span><span class="tech-row-val">Electric Set (protocol TBD)</span></div>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-card-head" style="background:rgba(136,153,170,.1);color:var(--ext)">🔌 Payments & Integrations</div>
+          <div class="tech-card-body">
+            <div class="tech-row"><span class="tech-row-name">Payment GW</span><span class="tech-row-val">Checkout.com · Mada · Benefit Pay</span></div>
+            <div class="tech-row"><span class="tech-row-name">Subscriptions</span><span class="tech-row-val">Chargebee · VAT TRN per entity</span></div>
+            <div class="tech-row"><span class="tech-row-name">F&B</span><span class="tech-row-val">KioSoft / Robot Barista API</span></div>
+            <div class="tech-row"><span class="tech-row-name">Prayer times</span><span class="tech-row-val">Adhan API · city-specific</span></div>
+            <div class="tech-row"><span class="tech-row-name">Messaging</span><span class="tech-row-val">SQS · SNS · EventBridge</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+
+  <!-- ───── DETAIL PANEL ───── -->
+  <div class="detail" id="detailPanel">
+    <div class="detail-empty" id="detailEmpty">
+      <div class="detail-empty-icon">🔍</div>
+      <div class="detail-empty-text">Click any component<br>to explore its details</div>
+    </div>
+    <div class="detail-body" id="detailBody" style="display:none"></div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+
+const LAYERS = [
+  { id:'client', name:'Client Layer', emoji:'🖥', sub:'· Built by SumatoSoft', accent:'#4A6FA5', bg:'rgba(26,26,46,.5)', comps:['MA','OD','IA'], desc:'End-user and operator-facing applications' },
+  { id:'entry',  name:'AWS Entry Layer', emoji:'🌐', sub:'', accent:'#5B8DD9', bg:'rgba(22,33,62,.5)', comps:['CF','R53','APIGW','COG'], desc:'Security perimeter, routing & authentication' },
+  { id:'backend',name:'IRIS Backend', emoji:'⚙️', sub:'· Node.js / TypeScript · ECS Fargate · Built by SumatoSoft', accent:'#7B9FD4', bg:'rgba(15,52,96,.5)', comps:['BOOK','SESS','USR','INTNT','DEVCMD','NOTIF','REGIO','PAY'], desc:'Core business logic microservices' },
+  { id:'orch',   name:'IRIS Orchestration', emoji:'🔁', sub:'', accent:'#9B72CF', bg:'rgba(83,52,131,.3)', comps:['SSM','DSM','PLM','METER'], desc:'State machines and pod lifecycle management' },
+  { id:'ai',     name:'Voice & AI Layer', emoji:'🎙', sub:'· AWS Managed Services', accent:'#52B788', bg:'rgba(27,67,50,.5)', comps:['TRANS','BEDR','POLLY'], desc:'Speech-to-text, intent AI, text-to-speech' },
+  { id:'data',   name:'Data Layer', emoji:'🗃', sub:'· Isolated per AWS Region', accent:'#74C69D', bg:'rgba(26,58,26,.5)', comps:['RDS','DDB','REDIS','S3'], desc:'Persistent storage, caching, object storage' },
+  { id:'msg',    name:'Async Messaging', emoji:'📨', sub:'', accent:'#E07A5F', bg:'rgba(61,26,26,.5)', comps:['SQS','SNS','EB'], desc:'Event-driven messaging and scheduling' },
+  { id:'iot',    name:'AWS IoT Core', emoji:'☁️', sub:'', accent:'#3A86FF', bg:'rgba(26,46,61,.5)', comps:['MQTTB','SHADOW','RULES','REG'], desc:'IoT connectivity, device shadows & rules' },
+  { id:'ext',    name:'External Integrations', emoji:'🔌', sub:'', accent:'#8899AA', bg:'rgba(40,40,50,.5)', comps:['CHKOUT','CHGBEE','KIOSOFT','ADHAN','ERP'], desc:'Third-party services and payment platforms' },
+  { id:'pisoft', name:'Raspberry Pi Software', emoji:'🍓', sub:'· Node.js / TypeScript · Built by SumatoSoft', accent:'#F4A261', bg:'rgba(45,27,0,.5)', comps:['GREENGRASS','LOCAL_API','DEV_MGR','LOCAL_SM'], desc:'On-device software stack per pod' },
+  { id:'piui',   name:'Kiosk UI', emoji:'📺', sub:'· Same Physical Raspberry Pi', accent:'#90BE6D', bg:'rgba(27,45,0,.5)', comps:['CHROMIUM','KIOSK_APP'], desc:'Walk-up touchscreen interface on each pod' },
+  { id:'elec',   name:'Electric Set', emoji:'⚡', sub:'· Factory Pre-wired · Hardware Abstraction', accent:'#F4A261', bg:'rgba(61,38,0,.5)', comps:['ESET'], desc:'Central hardware control board shipped with pod' },
+  { id:'device', name:'Smart Devices', emoji:'🔌', sub:'· All Pre-wired to Electric Set at Factory', accent:'#D4A574', bg:'rgba(42,26,0,.5)', comps:['BEV','BAU','SON','KAI','ITU','ACC'], desc:'Physical smart devices inside each pod' },
+];
+
+const C = {
+  MA:{ name:'Mobile App', emoji:'📱', layer:'client', tech:['React Native','iOS + Android'], feats:['Booking + Session UI','IRIS voice interface','F&B ordering','Subscription management','RTL Arabic support','Real-time device state via Device Shadow','Write commands → Backend API only'], warns:[], builtBy:true, connsOut:[['CF','HTTPS'],['SHADOW','Read shadow only (real-time)'],['TRANS','Audio stream']], connsIn:[['POLLY','Audio stream']] },
+  OD:{ name:'Ops Dashboard', emoji:'📊', layer:'client', tech:['React','Next.js','Web App'], feats:['Fleet real-time monitoring','Pod health + telemetry','Session lookup','Emergency overrides','Customer support tools','Maintenance ticket management'], warns:[], builtBy:true, connsOut:[['CF','HTTPS']], connsIn:[] },
+  IA:{ name:'Inventory & Admin App', emoji:'🗄', layer:'client', tech:['React','Next.js','Web App'], feats:['Region→Site→Cluster→Pod management','IoT device binding + commissioning','FAT / SAT status tracking','Config profiles per location','Cultural config (Adhan, Ramadan)','Audit logs'], warns:[], builtBy:true, connsOut:[['CF','HTTPS']], connsIn:[] },
+  CF:{ name:'CloudFront + WAF', emoji:'🌐', layer:'entry', tech:['AWS CloudFront','AWS WAF'], feats:['DDoS protection','Edge caching','Global CDN distribution'], warns:[], connsOut:[['R53','']], connsIn:[['MA','HTTPS'],['OD','HTTPS'],['IA','HTTPS']] },
+  R53:{ name:'Route 53', emoji:'🔀', layer:'entry', tech:['AWS Route 53','Geographic DNS'], feats:['Geographic routing','api.ae.vel.ai → AWS UAE','api.sa.vel.ai → AWS Riyadh','api.bh.vel.ai → AWS Bahrain','api.us.vel.ai → AWS US-East'], warns:[], connsOut:[['APIGW','']], connsIn:[['CF','']] },
+  APIGW:{ name:'API Gateway', emoji:'🚪', layer:'entry', tech:['AWS API Gateway','REST API','WebSocket API'], feats:['REST API endpoints','WebSocket API (real-time session events)','JWT validation via Cognito','Routes to IRIS Backend services'], warns:[], connsOut:[['COG','JWT validation'],['IRIS Backend','REST / WebSocket']], connsIn:[['R53',''],['KIOSK_APP','HTTPS booking + payment']] },
+  COG:{ name:'AWS Cognito', emoji:'🔐', layer:'entry', tech:['AWS Cognito','JWT','OAuth 2.0','MFA'], feats:['Auth + JWT token issuance','Multi-factor authentication','OAuth 2.0 support','User pools per region'], warns:[], connsOut:[], connsIn:[['APIGW','JWT validation']] },
+  BOOK:{ name:'Booking Service', emoji:'📅', layer:'backend', tech:['Node.js','TypeScript','ECS Fargate'], feats:['Pod availability management','Slot reservation','Adhan-aware scheduling','Ramadan schedule rules'], warns:[], builtBy:true, connsOut:[['REGIO','Regional rules'],['ADHAN','Prayer time data'],['KIOSOFT','Menu / order / status']], connsIn:[['APIGW','']] },
+  SESS:{ name:'Session Service', emoji:'⏱', layer:'backend', tech:['Node.js','TypeScript','ECS Fargate'], feats:['Session lifecycle management','Token issuance','Presence validation','Grace period logic'], warns:[], builtBy:true, connsOut:[['SSM','Lifecycle events'],['KIOSOFT','Menu / order / status']], connsIn:[['APIGW','']] },
+  USR:{ name:'User Service', emoji:'👤', layer:'backend', tech:['Node.js','TypeScript','ECS Fargate'], feats:['Profile management','Subscription tier','Entitlement validation','Preferences (language, location)'], warns:[], builtBy:true, connsOut:[['ERP','Asset data only']], connsIn:[['APIGW','']] },
+  INTNT:{ name:'Intent Router', emoji:'🎯', layer:'backend', tech:['Node.js','TypeScript','NLU dispatch'], feats:['NLU dispatch','Bounded action resolver','Fallback redirect logic','Off-topic guard'], warns:[], builtBy:true, connsOut:[['BEDR','Transcript + session context']], connsIn:[['TRANS','Transcript text'],['BEDR','Structured action']] },
+  DEVCMD:{ name:'Device Command Service', emoji:'📡', layer:'backend', tech:['Node.js','TypeScript','ECS Fargate'], feats:['Command builder','Device targeting via Shadow','Acknowledgment tracking','Retry logic'], warns:[], builtBy:true, connsOut:[['SQS','Device commands']], connsIn:[['APIGW','']] },
+  NOTIF:{ name:'Notification Service', emoji:'🔔', layer:'backend', tech:['Node.js','TypeScript','APNs','FCM'], feats:['Push (APNs + FCM)','SMS fallback','In-app banners','Ops alerts'], warns:[], builtBy:true, connsOut:[['SNS','']], connsIn:[['APIGW','']] },
+  REGIO:{ name:'Regional Config Service', emoji:'🌍', layer:'backend', tech:['Node.js','TypeScript','ECS Fargate'], feats:['Pricing per location','VAT rules per country','Operating hours','Cultural configuration'], warns:[], builtBy:true, connsOut:[], connsIn:[['BOOK','']] },
+  PAY:{ name:'Payment Service', emoji:'💳', layer:'backend', tech:['Node.js','TypeScript','ECS Fargate'], feats:['Usage metering','Overage triggers','PropCo revenue routing','Refund triggers','VAT invoice (TRN)'], warns:[], builtBy:true, connsOut:[['CHKOUT','Tokenized charge'],['CHGBEE','Subscription + overage events']], connsIn:[['APIGW','']] },
+  SSM:{ name:'Session State Machine', emoji:'🔄', layer:'orch', tech:['Node.js','State Machine'], feats:['booked → pre-warm','→ active','→ grace period','→ ended','→ reset'], warns:[], connsOut:[['DSM',''],['PLM',''],['METER','']], connsIn:[['SESS','']] },
+  DSM:{ name:'Disinfection State Machine', emoji:'🧹', layer:'orch', tech:['Node.js','State Machine'], feats:['Trigger: session_closed AND presence=empty','Blue-light + ionization cycle','Delay if occupancy detected'], warns:[], connsOut:[['EB','']], connsIn:[['SSM','']] },
+  PLM:{ name:'Pod Lifecycle Manager', emoji:'💤', layer:'orch', tech:['Node.js','State Machine'], feats:['Sleep mode trigger','Wake sequence (T-2 minutes before session)','Maintenance scheduling'], warns:[], connsOut:[['EB','']], connsIn:[['SSM','']] },
+  METER:{ name:'Usage Meter', emoji:'⚡', layer:'orch', tech:['Node.js','TypeScript'], feats:['Duration × location_id rate','Overage detection','Credit deduction','Subscription tier checks'], warns:[], connsOut:[['CHGBEE','Subscription + overage events']], connsIn:[['SSM','']] },
+  TRANS:{ name:'AWS Transcribe', emoji:'🎤', layer:'ai', tech:['AWS Transcribe','Streaming STT'], feats:['Streaming STT','EN · AR · ES languages','Auto noise threshold','Confidence scoring','In-region processing','Touch mode fallback on low confidence'], warns:[], connsOut:[['INTNT','Transcript text'],['S3','Transcript stored in-region']], connsIn:[['MA','Audio stream'],['KIOSK_APP','Audio stream']] },
+  BEDR:{ name:'AWS Bedrock · Claude', emoji:'🧠', layer:'ai', tech:['AWS Bedrock','Anthropic Claude','GCC TBD'], feats:['Bounded intent processing','Action classification','Off-topic detection','H1/H2 predefined redirects','Context: session + pod state'], warns:['⚠ GCC region availability TBD'], connsOut:[['INTNT','Structured action'],['POLLY','Response text']], connsIn:[['INTNT','Transcript + session context']] },
+  POLLY:{ name:'AWS Polly', emoji:'🔊', layer:'ai', tech:['AWS Polly','TTS','EN-ZA voice'], feats:['Text-to-speech synthesis','EN-ZA South African female voice','Whisper mode per pod type','Per-mode verbosity control'], warns:[], connsOut:[['MA','Audio stream'],['KIOSK_APP','Audio stream']], connsIn:[['BEDR','Response text']] },
+  RDS:{ name:'Amazon RDS PostgreSQL', emoji:'🗃', layer:'data', tech:['AWS RDS','PostgreSQL','Regional silo'], feats:['Users · Bookings','Subscriptions · Billing','Pod registry','Audit logs','Regional silo per country'], warns:[], connsOut:[], connsIn:[['IRIS Backend','Read / write']] },
+  DDB:{ name:'Amazon DynamoDB', emoji:'⚡', layer:'data', tech:['AWS DynamoDB','NoSQL'], feats:['Session state (real-time)','Device shadow cache','Presence events','Telemetry snapshots'], warns:[], connsOut:[], connsIn:[['IRIS Backend','Session state'],['RULES','Telemetry']] },
+  REDIS:{ name:'ElastiCache Redis', emoji:'🔴', layer:'data', tech:['AWS ElastiCache','Redis','Pub/Sub'], feats:['Session tokens','Rate limiting','Real-time pub/sub','Availability cache'], warns:[], connsOut:[], connsIn:[['IRIS Backend','Cache / pub-sub']] },
+  S3:{ name:'Amazon S3', emoji:'🪣', layer:'data', tech:['AWS S3','Per-country buckets'], feats:['Voice transcripts (per-country)','Maintenance logs','Invoices PDF','Static assets'], warns:[], connsOut:[], connsIn:[['TRANS','Transcript stored in-region']] },
+  SQS:{ name:'Amazon SQS', emoji:'📬', layer:'msg', tech:['AWS SQS','FIFO','Dead-letter queue'], feats:['Device command queue','Dead-letter queue','FIFO ordered commands'], warns:[], connsOut:[['MQTTB','']], connsIn:[['DEVCMD','Device commands']] },
+  SNS:{ name:'Amazon SNS', emoji:'📢', layer:'msg', tech:['AWS SNS','Event fan-out'], feats:['Event fan-out','Device telemetry alerts','Session lifecycle events'], warns:[], connsOut:[], connsIn:[['NOTIF',''],['RULES','Alert']] },
+  EB:{ name:'Amazon EventBridge', emoji:'🗓', layer:'msg', tech:['AWS EventBridge','Scheduled rules'], feats:['Scheduled pod wake events','Cleaning schedule triggers','Ramadan/Adhan rule events'], warns:[], connsOut:[['MQTTB','']], connsIn:[['PLM',''],['DSM','']] },
+  MQTTB:{ name:'MQTT Broker', emoji:'📡', layer:'iot', tech:['AWS IoT Core','MQTT','TLS 1.2+','QoS 1'], feats:['TLS 1.2+ encrypted transport','QoS 1 at-least-once delivery','Topic: vel/{region}/{site}/{cluster}/{pod}/{device}','Bidirectional with Pi via Greengrass'], warns:[], connsOut:[['SHADOW','State sync'],['RULES',''],['GREENGRASS','MQTT over TLS · QoS 1']], connsIn:[['SQS',''],['EB','']] },
+  SHADOW:{ name:'Device Shadows', emoji:'👁', layer:'iot', tech:['AWS IoT Device Shadow','Delta sync'], feats:['Desired state → Raspberry Pi','Reported state ← Raspberry Pi','Delta sync on reconnect','Read directly by Mobile App','Write only via Backend API'], warns:[], connsOut:[['REG','']], connsIn:[['MQTTB','State sync'],['MA','Read shadow only']] },
+  RULES:{ name:'IoT Rules Engine', emoji:'⚙️', layer:'iot', tech:['AWS IoT Rules Engine','SQL rules'], feats:['Telemetry → DynamoDB','Alert → SNS','Presence → Session State Machine','Anomaly → Ops alert'], warns:[], connsOut:[['SNS','Alert'],['DDB','Telemetry']], connsIn:[['MQTTB','']] },
+  REG:{ name:'Device Registry', emoji:'📋', layer:'iot', tech:['AWS IoT Registry','Globally unique IDs'], feats:['Region→Site→Cluster→Pod→Device hierarchy','Globally unique device IDs','Firmware version tracking','FAT/SAT/Healthy/Blocked status'], warns:[], connsOut:[], connsIn:[['SHADOW','']] },
+  CHKOUT:{ name:'Checkout.com', emoji:'💰', layer:'ext', tech:['Checkout.com','Payment gateway'], feats:['Payment gateway','Mada (Saudi)','Benefit Pay (Bahrain)','Apple Pay + Google Pay','Multi-entity routing (HoldCo + OpCo)'], warns:[], connsOut:[], connsIn:[['PAY','Tokenized charge']] },
+  CHGBEE:{ name:'Chargebee', emoji:'🔄', layer:'ext', tech:['Chargebee','Subscription engine'], feats:['Subscription engine','Tiered plans + overages','Proration logic','VAT-compliant invoicing','GCC TRN per entity','Retry on failed card'], warns:[], connsOut:[], connsIn:[['PAY','Subscription + overage'],['METER','Subscription + overage']] },
+  KIOSOFT:{ name:'KioSoft / Robot Barista', emoji:'☕', layer:'ext', tech:['KioSoft API','F&B platform'], feats:['F&B menu API','Order placement','Order status tracking','Queue management'], warns:['⚠ API spec TBD'], connsOut:[], connsIn:[['SESS','Menu / order / status'],['BOOK','Menu / order / status']] },
+  ADHAN:{ name:'Adhan Prayer Times API', emoji:'🕌', layer:'ext', tech:['Adhan API','Prayer times'], feats:['City-specific prayer timetable','Volume suppression trigger','Ramadan schedule source'], warns:[], connsOut:[], connsIn:[['BOOK','']] },
+  ERP:{ name:'External ERP / CMMS', emoji:'🏭', layer:'ext', tech:['External ERP','Outside IRIS scope'], feats:['Factory stock tracking','Uninstalled IoT devices','Spare parts + RMA','F&B consumables'], warns:['Outside IRIS scope'], connsOut:[], connsIn:[['USR','Asset data only']] },
+  GREENGRASS:{ name:'AWS IoT Greengrass v2', emoji:'🟢', layer:'pisoft', tech:['AWS IoT Greengrass v2','Node.js'], feats:['Cloud sync agent','Local Lambda execution','Telemetry buffering','Delta sync on reconnect'], warns:[], builtBy:true, connsOut:[['LOCAL_API',''],['LOCAL_SM','']], connsIn:[['MQTTB','MQTT over TLS · QoS 1']] },
+  LOCAL_API:{ name:'Local API Server', emoji:'🖥', layer:'pisoft', tech:['Node.js','TypeScript','Local HTTP'], feats:['Serves kiosk panel','Accepts commands from IRIS','Routes to Device Manager','Holds local session cache'], warns:[], builtBy:true, connsOut:[['DEV_MGR',''],['LOCAL_SM','']], connsIn:[['GREENGRASS',''],['KIOSK_APP','HTTP local']] },
+  DEV_MGR:{ name:'Device Manager', emoji:'⚙️', layer:'pisoft', tech:['Node.js','TypeScript','Protocol TBD'], feats:['Translates IRIS commands → Electric Set protocol','Reads sensor telemetry ← Electric Set','Publishes state → IoT Core'], warns:['⚠ Protocol TBD — pending factory hardware spec','Supports Modbus TCP / RTU / Custom binary / REST / GPIO'], builtBy:true, connsOut:[['ESET','Protocol TBD']], connsIn:[['LOCAL_API',''],['LOCAL_SM','Wake/sleep/disinfect']] },
+  LOCAL_SM:{ name:'Local State Machine', emoji:'🔄', layer:'pisoft', tech:['Node.js','TypeScript','Local execution'], feats:['Active session state','Wake/Sleep/Disinfect logic','Local scheduler execution','Runs offline if cloud drops'], warns:['⚠ Full offline scope TBD'], builtBy:true, connsOut:[['DEV_MGR','Wake/sleep/disinfect']], connsIn:[['GREENGRASS',''],['LOCAL_API','']] },
+  CHROMIUM:{ name:'Chromium · Kiosk Mode', emoji:'🌐', layer:'piui', tech:['Chromium','Kiosk mode','Full screen'], feats:['Full screen, no browser chrome','Auto-restart on crash','Local URL served by Local API'], warns:[], connsOut:[['KIOSK_APP','']], connsIn:[] },
+  KIOSK_APP:{ name:'Kiosk App', emoji:'📺', layer:'piui', tech:['React Native Web','Shared codebase with Mobile'], feats:['Walk-up pod access','F&B ordering','Contactless tap-to-pay','No account required','Talks to Local API Server','Falls back locally if cloud unreachable'], warns:[], builtBy:true, connsOut:[['LOCAL_API','HTTP local'],['APIGW','HTTPS booking + payment'],['TRANS','Audio stream']], connsIn:[['CHROMIUM',''],['POLLY','Audio stream']] },
+  ESET:{ name:'Electric Set Control Board', emoji:'⚡', layer:'elec', tech:['Factory pre-wired','Protocol TBD'], feats:['Ships with pod from factory','Aggregates ALL device connections','Single interface point to Raspberry Pi'], warns:['⚠ Interface Protocol TBD — confirm with factory','Possible: Modbus TCP · Modbus RTU · Custom binary · REST/HTTP · GPIO mix','SumatoSoft writes Device Manager to match factory protocol'], connsOut:[['BEV','Factory wired'],['BAU','Factory wired'],['SON','Factory wired'],['KAI','Factory wired'],['ITU','Factory wired'],['ACC','Factory wired']], connsIn:[['DEV_MGR','Protocol TBD']] },
+  BEV:{ name:'Bevenic', emoji:'💡', layer:'device', tech:['Smart Lighting','Environmental sensors'], feats:['Availability Halo Light (green/amber/red)','Privacy Halo Light (do-not-disturb pulse)','Temperature Sensor','CO₂ Sensor'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
+  BAU:{ name:'Baumedi', emoji:'🔵', layer:'device', tech:['Disinfection hardware'], feats:['Ionization Unit','Blue Light Disinfection','Triggered by Disinfection State Machine'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
+  SON:{ name:'Sonte Privacy Glass', emoji:'🪟', layer:'device', tech:['Sonte','sonte.eu'], feats:['Switchable privacy glass','Adjustable opacity on command'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
+  KAI:{ name:'Kaiku Acoustic', emoji:'🔊', layer:'device', tech:['Kaiku Acoustic','Surround audio'], feats:['Surround speakers','Volume per pod type','Whisper mode','Adhan mute trigger'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
+  ITU:{ name:'Itula Micro-HVAC', emoji:'🌬️', layer:'device', tech:['Itula','HEPA Filtration','itula.fi'], feats:['Micro-HVAC Unit','HEPA Filtration','Temperature setpoint control','Airflow level control'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
+  ACC:{ name:'Access Control', emoji:'🔒', layer:'device', tech:['Smart Lock','Biometric','TBD Manufacturer'], feats:['Smart Lock','Biometric / App unlock','Session handoff','Egress always enabled'], warns:['⚠ Manufacturer TBD'], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
+};
+
+// ═══════════════════════════════════════════════════════
+// LAYER ACCENT COLORS
+// ═══════════════════════════════════════════════════════
+const ACCENT = {
+  client:'#4A6FA5',entry:'#5B8DD9',backend:'#7B9FD4',orch:'#9B72CF',
+  ai:'#52B788',data:'#74C69D',msg:'#E07A5F',iot:'#3A86FF',ext:'#8899AA',
+  pisoft:'#F4A261',piui:'#90BE6D',elec:'#F4A261',device:'#D4A574',
+};
+
+// ═══════════════════════════════════════════════════════
+// BUILD UI
+// ═══════════════════════════════════════════════════════
+
+let selected = null;
+
+function buildLayerNav() {
+  const nav = document.getElementById('layerNav');
+  const groups = [
+    { title:'Clients', ids:['client'] },
+    { title:'AWS Cloud', ids:['entry','backend','orch','ai','data','msg','iot'] },
+    { title:'Integrations', ids:['ext'] },
+    { title:'Edge Hardware', ids:['pisoft','piui','elec','device'] },
+  ];
+  groups.forEach(g => {
+    const sec = document.createElement('div');
+    sec.className = 'lnav-section';
+    sec.textContent = g.title;
+    nav.appendChild(sec);
+    g.ids.forEach(lid => {
+      const layer = LAYERS.find(l=>l.id===lid);
+      if(!layer) return;
+      const item = document.createElement('div');
+      item.className = 'lnav-item';
+      item.id = 'lnav-'+lid;
+      item.innerHTML = `<div class="lnav-dot" style="background:${layer.accent}22;border:1.5px solid ${layer.accent}"></div>${layer.emoji} ${layer.name}`;
+      item.onclick = () => {
+        showPage('arch', document.querySelector('.tab:nth-child(2)'));
+        setTimeout(() => {
+          const el = document.getElementById('layer-'+lid);
+          if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+          document.querySelectorAll('.lnav-item').forEach(i=>i.classList.remove('on'));
+          item.classList.add('on');
+        }, 50);
+      };
+      nav.appendChild(item);
+    });
+  });
+}
+
+function buildArch() {
+  const container = document.getElementById('arch-layers');
+  LAYERS.forEach((layer, li) => {
+    if(li > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'flow-conn';
+      conn.innerHTML = `<div class="flow-arr"><div class="flow-line"></div><div class="flow-tip"></div></div>`;
+      container.appendChild(conn);
+    }
+
+    const section = document.createElement('div');
+    section.className = 'layer-section';
+    section.id = 'layer-'+layer.id;
+    section.style.borderColor = layer.accent+'33';
+
+    const head = document.createElement('div');
+    head.className = 'layer-head';
+    head.style.background = layer.bg;
+    head.style.borderBottom = `1px solid ${layer.accent}22`;
+    head.innerHTML = `
+      <div class="layer-head-left">
+        <span class="layer-head-emoji">${layer.emoji}</span>
+        <span style="color:${layer.accent}">${layer.name}</span>
+        <span class="layer-sub">${layer.sub}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="layer-desc">${layer.desc}</span>
+        <span class="layer-count">${layer.comps.length}</span>
+      </div>`;
+    section.appendChild(head);
+
+    const grid = document.createElement('div');
+    grid.className = 'comp-grid';
+
+    layer.comps.forEach(cid => {
+      const comp = C[cid];
+      if(!comp) return;
+      const hasWarn = comp.warns && comp.warns.length > 0;
+      const card = document.createElement('div');
+      card.className = 'comp';
+      card.id = 'comp-'+cid;
+      card.innerHTML = `
+        ${hasWarn ? '<div class="comp-warn"></div>' : ''}
+        <span class="comp-emoji">${comp.emoji}</span>
+        <div class="comp-name">${comp.name}</div>
+        <div class="comp-tech">${comp.tech.slice(0,2).join(' · ')}</div>`;
+      card.onclick = () => selectComp(cid);
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+function selectComp(cid) {
+  if(!C[cid]) return;
+  // ensure we're on the Architecture tab
+  const archTab = document.querySelector('.tab:nth-child(2)');
+  if(!document.getElementById('page-arch').classList.contains('on')) {
+    showPage('arch', archTab);
+  }
+  // deselect previous
+  if(selected) {
+    const prev = document.getElementById('comp-'+selected);
+    if(prev) prev.classList.remove('on');
+  }
+  selected = cid;
+  const el = document.getElementById('comp-'+cid);
+  if(el) {
+    el.classList.add('on');
+    setTimeout(() => el.scrollIntoView({behavior:'smooth',block:'center'}), 80);
+  }
+  renderDetail(cid);
+}
+
+function renderDetail(cid) {
+  const comp = C[cid];
+  if(!comp) return;
+  const accent = ACCENT[comp.layer] || '#4A6FA5';
+  const layer = LAYERS.find(l=>l.id===comp.layer);
+
+  document.getElementById('detailEmpty').style.display = 'none';
+  const body = document.getElementById('detailBody');
+  body.style.display = 'block';
+
+  // highlight layer nav item
+  document.querySelectorAll('.lnav-item').forEach(i=>i.classList.remove('on'));
+  const lnavItem = document.getElementById('lnav-'+comp.layer);
+  if(lnavItem) { lnavItem.classList.add('on'); lnavItem.style.borderLeftColor = accent; }
+
+  let html = `
+    <div class="d-header">
+      <div class="d-emoji">${comp.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div class="d-name">${comp.name}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">
+          <span class="d-layer-tag" style="background:${accent}22;color:${accent}">${layer ? layer.name : comp.layer}</span>
+          ${comp.builtBy ? `<span class="d-layer-tag" style="background:rgba(82,183,136,.12);color:var(--ai)">✦ SumatoSoft</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  if(comp.tech && comp.tech.length) {
+    html += `<div class="d-section"><div class="d-title">Technology</div><div class="tags">${comp.tech.map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>`;
+  }
+
+  if(comp.feats && comp.feats.length) {
+    html += `<div class="d-section"><div class="d-title">Responsibilities</div><div class="feat-list">${comp.feats.map(f=>`<div class="feat">${f}</div>`).join('')}</div></div>`;
+  }
+
+  if(comp.warns && comp.warns.length) {
+    html += `<div class="d-section"><div class="d-title">⚠ Open Items</div>`;
+    comp.warns.forEach(w => {
+      html += `<div class="warn-box"><div class="warn-text">${w}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  const hasConns = (comp.connsOut && comp.connsOut.length) || (comp.connsIn && comp.connsIn.length);
+  if(hasConns) {
+    html += `<div class="d-section"><div class="d-title">Connections</div><div class="conn-list">`;
+    if(comp.connsOut && comp.connsOut.length) {
+      comp.connsOut.forEach(([target, label]) => {
+        const tc = C[target];
+        const clickable = !!tc;
+        html += `<div class="conn-row">
+          <span class="conn-dir">OUT</span>
+          <span class="conn-chip" ${clickable ? `onclick="selectComp('${target}')" title="Click to inspect"` : ''} style="${!clickable?'cursor:default;opacity:.7':''}">
+            ${tc ? tc.emoji+' ' : '⬡ '}${tc ? tc.name : target}
+          </span>
+          <span class="conn-label">${label}</span>
+        </div>`;
+      });
+    }
+    if(comp.connsIn && comp.connsIn.length) {
+      comp.connsIn.forEach(([source, label]) => {
+        const sc = C[source];
+        const clickable = !!sc;
+        html += `<div class="conn-row">
+          <span class="conn-dir" style="opacity:.5">IN</span>
+          <span class="conn-chip" ${clickable ? `onclick="selectComp('${source}')" title="Click to inspect"` : ''} style="${!clickable?'cursor:default;opacity:.7':''}">
+            ${sc ? sc.emoji+' ' : '⬡ '}${sc ? sc.name : source}
+          </span>
+          <span class="conn-label">${label}</span>
+        </div>`;
+      });
+    }
+    html += `</div></div>`;
+  }
+
+  body.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  if(btn) btn.classList.add('on');
+
+  // show/hide layer nav based on page
+  const layerNav = document.getElementById('layerNav');
+  layerNav.style.display = id === 'arch' ? '' : 'none';
+
+  // show/hide detail panel
+  const detail = document.getElementById('detailPanel');
+  detail.style.display = id === 'arch' ? '' : 'none';
+}
+
+function showFlow(id, btn) {
+  document.querySelectorAll('.flow-diagram').forEach(f=>f.classList.remove('on'));
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('flow-'+id).classList.add('on');
+  if(btn) btn.classList.add('on');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+
+buildLayerNav();
+buildArch();
+// init: hide layer nav and detail on overview
+document.getElementById('layerNav').style.display = 'none';
+document.getElementById('detailPanel').style.display = 'none';
+</script>
+</body>
+</html>
