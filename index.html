@@ -1077,6 +1077,106 @@ nav {
     flex: 1 1 150px;
   }
 }
+
+/* ─── Diagram Tab ─── */
+.dsl-header {
+  margin-bottom: 20px;
+}
+.dsl-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.dsl-header p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.dsl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dsl-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.dsl-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(78,109,158,0.25);
+}
+.dsl-copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(78,109,158,0.35);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.dsl-copy-btn:hover {
+  background: rgba(78,109,158,0.22);
+  border-color: var(--accent);
+}
+.dsl-copy-btn.copied {
+  background: rgba(82,183,136,0.12);
+  border-color: rgba(82,183,136,0.35);
+  color: #52B788;
+}
+.dsl-wrap {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.dsl-code {
+  display: block;
+  width: 100%;
+  padding: 24px 28px;
+  background: rgba(0,0,0,0.3);
+  color: #C8CCDB;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.75;
+  white-space: pre;
+  overflow-x: auto;
+  tab-size: 2;
+  outline: none;
+  border: none;
+  resize: none;
+  min-height: 400px;
+}
+.dsl-code::-webkit-scrollbar { height: 6px; width: 6px; }
+.dsl-code::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.dsl-hint {
+  padding: 10px 16px;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
 </style>
 </head>
 <body>
@@ -1093,6 +1193,7 @@ nav {
     <button class="tab" onclick="showPage('arch',this)">Architecture</button>
     <button class="tab" onclick="showPage('flows',this)">Key Flows</button>
     <button class="tab" onclick="showPage('tech',this)">Technology</button>
+    <button class="tab" onclick="showPage('diagram',this)">Diagram</button>
   </nav>
   <div class="live-badge">
     <div class="live-dot"></div>Live Diagram
@@ -1404,6 +1505,30 @@ nav {
         </div>
       </div>
     </div>
+
+    <div class="page" id="page-diagram">
+      <div class="dsl-header">
+        <h2>Structurizr DSL</h2>
+        <p>C4 model workspace definition — paste directly into <strong style="color:var(--text)">structurizr.com/dsl</strong> to render interactive diagrams.</p>
+      </div>
+      <div class="dsl-toolbar">
+        <div class="dsl-meta">
+          <span class="dsl-badge">Structurizr DSL v1</span>
+          <span>C4 Model · System Context + Containers</span>
+        </div>
+        <button class="dsl-copy-btn" id="dslCopyBtn" onclick="copyDsl()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy to clipboard
+        </button>
+      </div>
+      <div class="dsl-wrap">
+        <textarea class="dsl-code" id="dslCode" readonly spellcheck="false"></textarea>
+        <div class="dsl-hint">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Open structurizr.com/dsl → paste → render · Supports System Context and Container views with autolayout
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="detail" id="detailPanel">
@@ -1426,16 +1551,17 @@ const LAYERS = [
   { id:'msg',    name:'Async Messaging', emoji:'📨', sub:'', accent:'#E07A5F', bg:'rgba(61,26,26,.5)', comps:['SQS','SNS','EB'], desc:'Event-driven messaging and scheduling' },
   { id:'iot',    name:'AWS IoT Core', emoji:'☁️', sub:'', accent:'#3A86FF', bg:'rgba(26,46,61,.5)', comps:['MQTTB','SHADOW','RULES','REG'], desc:'IoT connectivity, device shadows & rules' },
   { id:'ext',    name:'External Integrations', emoji:'🔌', sub:'', accent:'#8899AA', bg:'rgba(40,40,50,.5)', comps:['CHKOUT','CHGBEE','KIOSOFT','ADHAN','ERP'], desc:'Third-party services and payment platforms' },
-  { id:'pisoft', name:'Raspberry Pi Software', emoji:'🍓', sub:'· Node.js / TypeScript', accent:'#F4A261', bg:'rgba(45,27,0,.5)', comps:['GREENGRASS','LOCAL_API','DEV_MGR','LOCAL_SM'], desc:'On-device software stack per pod' },
-  { id:'piui',   name:'Kiosk UI', emoji:'📺', sub:'· Same Physical Raspberry Pi', accent:'#90BE6D', bg:'rgba(27,45,0,.5)', comps:['CHROMIUM','KIOSK_APP'], desc:'Walk-up touchscreen interface on each pod' },
-  { id:'elec',   name:'Electric Set', emoji:'⚡', sub:'· Factory Pre-wired · Hardware Abstraction', accent:'#F4A261', bg:'rgba(61,38,0,.5)', comps:['ESET'], desc:'Central hardware control board shipped with pod' },
-  { id:'device', name:'Smart Devices', emoji:'🔌', sub:'· All Pre-wired to Electric Set at Factory', accent:'#D4A574', bg:'rgba(42,26,0,.5)', comps:['BEV','BAU','SON','KAI','ITU','ACC'], desc:'Physical smart devices inside each pod' },
+  { id:'pisoft', name:'Raspberry Pi Software', emoji:'🍓', sub:'· Node.js / TypeScript', accent:'#F4A261', bg:'rgba(45,27,0,.5)', comps:['GREENGRASS','LOCAL_API','HAL','LOCAL_SM'], desc:'On-device software stack per pod' },
+  { id:'piui',   name:'Local Panel', emoji:'📺', sub:'· Same Physical Raspberry Pi', accent:'#90BE6D', bg:'rgba(27,45,0,.5)', comps:['CHROMIUM','KIOSK_APP'], desc:'Walk-up touchscreen interface on each pod' },
+  { id:'elec',   name:'Electric Set', emoji:'⚡', sub:'· OEM Factory Pre-wired · Hardware Abstraction Boundary', accent:'#F4A261', bg:'rgba(61,38,0,.5)', comps:['ESET'], desc:'Central hardware control board shipped with pod' },
+  { id:'device', name:'Smart Devices', emoji:'🔌', sub:'· All Pre-wired to Electric Set at OEM', accent:'#D4A574', bg:'rgba(42,26,0,.5)', comps:['BEV','BAU','SON','KAI','ITU','ACC','MLED'], desc:'Physical smart devices inside each pod' },
+  { id:'robot',  name:'Robot Barista', emoji:'🤖', sub:'· Site-Installed Separately', accent:'#90BE6D', bg:'rgba(26,42,26,.5)', comps:['RB'], desc:'Site-installed F&B robot, connects via KioSoft cloud API' },
 ];
 
 const C = {
   MA:{ name:'Mobile App', emoji:'📱', layer:'client', tech:['React Native','iOS + Android'], feats:['Booking + Session UI','IRIS voice interface','F&B ordering','Subscription management','RTL Arabic support','Real-time device state via Device Shadow','Write commands → Backend API only'], warns:[], connsOut:[['CF','HTTPS'],['SHADOW','Read shadow only (real-time)'],['TRANS','Audio stream']], connsIn:[['POLLY','Audio stream']] },
   OD:{ name:'Ops Dashboard', emoji:'📊', layer:'client', tech:['React','Next.js','Web App'], feats:['Fleet real-time monitoring','Pod health + telemetry','Session lookup','Emergency overrides','Customer support tools','Maintenance ticket management'], warns:[], connsOut:[['CF','HTTPS']], connsIn:[] },
-  IA:{ name:'Inventory & Admin App', emoji:'🗄', layer:'client', tech:['React','Next.js','Web App'], feats:['Region→Site→Cluster→Pod management','IoT device binding + commissioning','FAT / SAT status tracking','Config profiles per location','Cultural config (Adhan, Ramadan)','Audit logs'], warns:[], connsOut:[['CF','HTTPS']], connsIn:[] },
+  IA:{ name:'Inventory & Admin App', emoji:'🗄', layer:'client', tech:['React','Next.js','Web App'], feats:['Region→Site→Cluster→Pod management','Digital manifest import (OEM CSV / API)','IoT PROVISIONING: X.509 cert injection, network setup, device identity binding','IoT COMMISSIONING: IRIS handshake, device-to-pod mapping, payment test, health check','FAT / SAT status tracking','Config profiles per location','Cultural config (Adhan, Ramadan, RTL)','Audit logs · Right to be Forgotten'], warns:[], connsOut:[['CF','HTTPS'],['REG','X.509 cert provisioning & device identity'],['S3','Digital manifest import']], connsIn:[] },
   CF:{ name:'CloudFront + WAF', emoji:'🌐', layer:'entry', tech:['AWS CloudFront','AWS WAF'], feats:['DDoS protection','Edge caching','Global CDN distribution'], warns:[], connsOut:[['R53','']], connsIn:[['MA','HTTPS'],['OD','HTTPS'],['IA','HTTPS']] },
   R53:{ name:'Route 53', emoji:'🔀', layer:'entry', tech:['AWS Route 53','Geographic DNS'], feats:['Geographic routing','api.ae.vel.ai → AWS UAE','api.sa.vel.ai → AWS Riyadh','api.bh.vel.ai → AWS Bahrain','api.us.vel.ai → AWS US-East'], warns:[], connsOut:[['APIGW','']], connsIn:[['CF','']] },
   APIGW:{ name:'API Gateway', emoji:'🚪', layer:'entry', tech:['AWS API Gateway','REST API','WebSocket API'], feats:['REST API endpoints','WebSocket API (real-time session events)','JWT validation via Cognito','Routes to IRIS Backend services'], warns:[], connsOut:[['COG','JWT validation'],['IRIS Backend','REST / WebSocket']], connsIn:[['R53',''],['KIOSK_APP','HTTPS booking + payment']] },
@@ -1452,9 +1578,9 @@ const C = {
   DSM:{ name:'Disinfection State Machine', emoji:'🧹', layer:'orch', tech:['Node.js','State Machine'], feats:['Trigger: session_closed AND presence=empty','Blue-light + ionization cycle','Delay if occupancy detected'], warns:[], connsOut:[['EB','']], connsIn:[['SSM','']] },
   PLM:{ name:'Pod Lifecycle Manager', emoji:'💤', layer:'orch', tech:['Node.js','State Machine'], feats:['Sleep mode trigger','Wake sequence (T-2 minutes before session)','Maintenance scheduling'], warns:[], connsOut:[['EB','']], connsIn:[['SSM','']] },
   METER:{ name:'Usage Meter', emoji:'⚡', layer:'orch', tech:['Node.js','TypeScript'], feats:['Duration × location_id rate','Overage detection','Credit deduction','Subscription tier checks'], warns:[], connsOut:[['CHGBEE','Subscription + overage events']], connsIn:[['SSM','']] },
-  TRANS:{ name:'AWS Transcribe', emoji:'🎤', layer:'ai', tech:['AWS Transcribe','Streaming STT'], feats:['Streaming STT','EN · AR · ES languages','Auto noise threshold','Confidence scoring','In-region processing','Touch mode fallback on low confidence'], warns:[], connsOut:[['INTNT','Transcript text'],['S3','Transcript stored in-region']], connsIn:[['MA','Audio stream'],['KIOSK_APP','Audio stream']] },
+  TRANS:{ name:'AWS Transcribe', emoji:'🎤', layer:'ai', tech:['AWS Transcribe','Streaming STT'], feats:['Streaming STT','EN · AR · ES languages','Arabic↔English code-switching support','Auto noise threshold','Confidence scoring','In-region processing (data residency)','Touch mode fallback on low confidence','Mute state: no audio captured'], warns:[], connsOut:[['INTNT','Transcript text'],['S3','Transcript stored in-region (biometric-class)']], connsIn:[['MA','Audio stream (only when not muted)'],['KIOSK_APP','Audio stream (only when not muted)']] },
   BEDR:{ name:'AWS Bedrock · Claude', emoji:'🧠', layer:'ai', tech:['AWS Bedrock','Anthropic Claude','GCC TBD'], feats:['Bounded intent processing','Action classification','Off-topic detection','H1/H2 predefined redirects','Context: session + pod state'], warns:['⚠ GCC region availability TBD'], connsOut:[['INTNT','Structured action'],['POLLY','Response text']], connsIn:[['INTNT','Transcript + session context']] },
-  POLLY:{ name:'AWS Polly', emoji:'🔊', layer:'ai', tech:['AWS Polly','TTS','EN-ZA voice'], feats:['Text-to-speech synthesis','EN-ZA South African female voice','Whisper mode per pod type','Per-mode verbosity control'], warns:[], connsOut:[['MA','Audio stream'],['KIOSK_APP','Audio stream']], connsIn:[['BEDR','Response text']] },
+  POLLY:{ name:'AWS Polly', emoji:'🔊', layer:'ai', tech:['AWS Polly','TTS','EN-ZA voice'], feats:['Text-to-speech synthesis','EN-ZA South African female voice','Whisper mode per pod type','Per-mode verbosity control','Adhan mute: output suppressed during prayer time'], warns:[], connsOut:[['MA','Audio stream'],['KIOSK_APP','Audio stream']], connsIn:[['BEDR','Response text']] },
   RDS:{ name:'Amazon RDS PostgreSQL', emoji:'🗃', layer:'data', tech:['AWS RDS','PostgreSQL','Regional silo'], feats:['Users · Bookings','Subscriptions · Billing','Pod registry','Audit logs','Regional silo per country'], warns:[], connsOut:[], connsIn:[['IRIS Backend','Read / write']] },
   DDB:{ name:'Amazon DynamoDB', emoji:'⚡', layer:'data', tech:['AWS DynamoDB','NoSQL'], feats:['Session state (real-time)','Device shadow cache','Presence events','Telemetry snapshots'], warns:[], connsOut:[], connsIn:[['IRIS Backend','Session state'],['RULES','Telemetry']] },
   REDIS:{ name:'ElastiCache Redis', emoji:'🔴', layer:'data', tech:['AWS ElastiCache','Redis','Pub/Sub'], feats:['Session tokens','Rate limiting','Real-time pub/sub','Availability cache'], warns:[], connsOut:[], connsIn:[['IRIS Backend','Cache / pub-sub']] },
@@ -1471,19 +1597,21 @@ const C = {
   KIOSOFT:{ name:'KioSoft / Robot Barista', emoji:'☕', layer:'ext', tech:['KioSoft API','F&B platform'], feats:['F&B menu API','Order placement','Order status tracking','Queue management'], warns:['⚠ API spec TBD'], connsOut:[], connsIn:[['SESS','Menu / order / status'],['BOOK','Menu / order / status']] },
   ADHAN:{ name:'Adhan Prayer Times API', emoji:'🕌', layer:'ext', tech:['Adhan API','Prayer times'], feats:['City-specific prayer timetable','Volume suppression trigger','Ramadan schedule source'], warns:[], connsOut:[], connsIn:[['BOOK','']] },
   ERP:{ name:'External ERP / CMMS', emoji:'🏭', layer:'ext', tech:['External ERP','Outside IRIS scope'], feats:['Factory stock tracking','Uninstalled IoT devices','Spare parts + RMA','F&B consumables'], warns:['Outside IRIS scope'], connsOut:[], connsIn:[['USR','Asset data only']] },
-  GREENGRASS:{ name:'AWS IoT Greengrass v2', emoji:'🟢', layer:'pisoft', tech:['AWS IoT Greengrass v2','Node.js'], feats:['Cloud sync agent','Local Lambda execution','Telemetry buffering','Delta sync on reconnect'], warns:[], connsOut:[['LOCAL_API',''],['LOCAL_SM','']], connsIn:[['MQTTB','MQTT over TLS · QoS 1']] },
-  LOCAL_API:{ name:'Local API Server', emoji:'🖥', layer:'pisoft', tech:['Node.js','TypeScript','Local HTTP'], feats:['Serves kiosk panel','Accepts commands from IRIS','Routes to Device Manager','Holds local session cache'], warns:[], connsOut:[['DEV_MGR',''],['LOCAL_SM','']], connsIn:[['GREENGRASS',''],['KIOSK_APP','HTTP local']] },
-  DEV_MGR:{ name:'Device Manager', emoji:'⚙️', layer:'pisoft', tech:['Node.js','TypeScript','Protocol TBD'], feats:['Translates IRIS commands → Electric Set protocol','Reads sensor telemetry ← Electric Set','Publishes state → IoT Core'], warns:['⚠ Protocol TBD — pending factory hardware spec','Supports Modbus TCP / RTU / Custom binary / REST / GPIO'], connsOut:[['ESET','Protocol TBD']], connsIn:[['LOCAL_API',''],['LOCAL_SM','Wake/sleep/disinfect']] },
-  LOCAL_SM:{ name:'Local State Machine', emoji:'🔄', layer:'pisoft', tech:['Node.js','TypeScript','Local execution'], feats:['Active session state','Wake/Sleep/Disinfect logic','Local scheduler execution','Runs offline if cloud drops'], warns:['⚠ Full offline scope TBD'], connsOut:[['DEV_MGR','Wake/sleep/disinfect']], connsIn:[['GREENGRASS',''],['LOCAL_API','']] },
+  GREENGRASS:{ name:'AWS IoT Greengrass v2', emoji:'🟢', layer:'pisoft', tech:['AWS IoT Greengrass v2','Node.js'], feats:['Cloud sync agent','X.509 cert identity (mTLS)','Local Lambda execution','Telemetry buffering','Delta sync on reconnect'], warns:[], connsOut:[['LOCAL_API',''],['LOCAL_SM','']], connsIn:[['MQTTB','MQTT over TLS · mTLS X.509 · QoS 1']] },
+  LOCAL_API:{ name:'Local API Server', emoji:'🖥', layer:'pisoft', tech:['Node.js','TypeScript','Local HTTP'], feats:['Serves local panel UI','Accepts commands from IRIS cloud','Routes to HAL','Holds local session cache'], warns:[], connsOut:[['HAL',''],['LOCAL_SM','']], connsIn:[['GREENGRASS',''],['KIOSK_APP','HTTP local']] },
+  HAL:{ name:'HAL (Hardware Abstraction Layer)', emoji:'⚙️', layer:'pisoft', tech:['Node.js','TypeScript','Built by SumatoSoft'], feats:['Unifies diverse vendor protocols → common data model for IRIS','Translates IRIS commands → Electric Set protocol','Reads sensor telemetry ← Electric Set','Publishes state → IoT Core'], warns:['⚠ Protocol TBD — pending OEM hardware spec','Possible: Modbus TCP · Modbus RTU over RS-485 · Custom binary serial · REST/HTTP · GPIO mix','SumatoSoft writes HAL to match whatever protocol OEM exposes'], connsOut:[['ESET','Protocol TBD (Modbus / Custom binary / REST)']], connsIn:[['LOCAL_API',''],['LOCAL_SM','Wake/sleep/disinfect/mute LED commands']] },
+  LOCAL_SM:{ name:'Local State Machine', emoji:'🔄', layer:'pisoft', tech:['Node.js','TypeScript','Local execution'], feats:['Active session state','Wake/Sleep/Disinfect logic','Local scheduler execution','Mute LED state control','Runs offline if cloud drops'], warns:['⚠ Full offline scope TBD'], connsOut:[['HAL','Wake/sleep/disinfect/mute LED commands']], connsIn:[['GREENGRASS',''],['LOCAL_API','']] },
   CHROMIUM:{ name:'Chromium · Kiosk Mode', emoji:'🌐', layer:'piui', tech:['Chromium','Kiosk mode','Full screen'], feats:['Full screen, no browser chrome','Auto-restart on crash','Local URL served by Local API'], warns:[], connsOut:[['KIOSK_APP','']], connsIn:[] },
-  KIOSK_APP:{ name:'Kiosk App', emoji:'📺', layer:'piui', tech:['React Native Web','Shared codebase with Mobile'], feats:['Walk-up pod access','F&B ordering','Contactless tap-to-pay','No account required','Talks to Local API Server','Falls back locally if cloud unreachable'], warns:[], connsOut:[['LOCAL_API','HTTP local'],['APIGW','HTTPS booking + payment'],['TRANS','Audio stream']], connsIn:[['CHROMIUM',''],['POLLY','Audio stream']] },
-  ESET:{ name:'Electric Set Control Board', emoji:'⚡', layer:'elec', tech:['Factory pre-wired','Protocol TBD'], feats:['Ships with pod from factory','Aggregates ALL device connections','Single interface point to Raspberry Pi'], warns:['⚠ Interface Protocol TBD — confirm with factory','Possible: Modbus TCP · Modbus RTU · Custom binary · REST/HTTP · GPIO mix'], connsOut:[['BEV','Factory wired'],['BAU','Factory wired'],['SON','Factory wired'],['KAI','Factory wired'],['ITU','Factory wired'],['ACC','Factory wired']], connsIn:[['DEV_MGR','Protocol TBD']] },
+  KIOSK_APP:{ name:'Local Panel App', emoji:'📺', layer:'piui', tech:['React Native Web','Shared codebase with Mobile App'], feats:['Walk-up pod access','F&B ordering','Contactless tap-to-pay','Halal compliance tags','No account required','Talks to Local API Server','Falls back locally if cloud unreachable','IRIS voice + touch fallback'], warns:[], connsOut:[['LOCAL_API','HTTP local — device control + session state'],['APIGW','HTTPS — booking + payment'],['TRANS','Audio stream (only when not muted)']], connsIn:[['CHROMIUM',''],['POLLY','Audio stream']] },
+  ESET:{ name:'Electric Set Control Board', emoji:'⚡', layer:'elec', tech:['OEM factory pre-wired','Ships with pod'], feats:['OEM factory pre-wired — ships with pod','Aggregates ALL factory-installed device connections','Single interface point to Raspberry Pi'], warns:['⚠ Interface Protocol TBD — confirm with OEM: Modbus TCP · Modbus RTU over RS-485 · Custom binary serial · REST/HTTP · GPIO mix','SumatoSoft writes HAL to match whatever protocol OEM exposes'], connsOut:[['BEV','Factory wired'],['BAU','Factory wired'],['SON','Factory wired'],['KAI','Factory wired'],['ITU','Factory wired'],['ACC','Factory wired'],['MLED','Factory wired']], connsIn:[['HAL','Protocol TBD']] },
   BEV:{ name:'Bevenic', emoji:'💡', layer:'device', tech:['Smart Lighting','Environmental sensors'], feats:['Availability Halo Light (green/amber/red)','Privacy Halo Light (do-not-disturb pulse)','Temperature Sensor','CO₂ Sensor'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
   BAU:{ name:'Baumedi', emoji:'🔵', layer:'device', tech:['Disinfection hardware'], feats:['Ionization Unit','Blue Light Disinfection','Triggered by Disinfection State Machine'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
   SON:{ name:'Sonte Privacy Glass', emoji:'🪟', layer:'device', tech:['Sonte','sonte.eu'], feats:['Switchable privacy glass','Adjustable opacity on command'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
   KAI:{ name:'Kaiku Acoustic', emoji:'🔊', layer:'device', tech:['Kaiku Acoustic','Surround audio'], feats:['Surround speakers','Volume per pod type','Whisper mode','Adhan mute trigger'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
   ITU:{ name:'Itula Micro-HVAC', emoji:'🌬️', layer:'device', tech:['Itula','HEPA Filtration','itula.fi'], feats:['Micro-HVAC Unit','HEPA Filtration','Temperature setpoint control','Airflow level control'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
   ACC:{ name:'Access Control', emoji:'🔒', layer:'device', tech:['Smart Lock','Biometric','TBD Manufacturer'], feats:['Smart Lock','Biometric / App unlock','Session handoff','Egress always enabled'], warns:['⚠ Manufacturer TBD'], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
+  MLED:{ name:'Mute LED Indicator', emoji:'💡', layer:'device', tech:['Physical LED','Hardware component'], feats:['Physical LED — visual proof AI is not listening','GCC privacy compliance requirement','Controlled by Local SM via HAL'], warns:[], connsOut:[], connsIn:[['ESET','Factory pre-wired']] },
+  RB:{ name:'Robot Barista Unit', emoji:'🤖', layer:'robot', tech:['OEM Robot Hardware','KioSoft API'], feats:['Site-installed (not factory pre-wired with pod)','Connects to IRIS via KioSoft API (cloud) — NOT via HAL or MQTT','Beverage catalog managed in robot vendor portal','High-value item shipped separately from pod structure'], warns:['⚠ API spec TBD — assumed fully functional per V&S doc'], connsOut:[['KIOSOFT','KioSoft API (cloud connection)']], connsIn:[] },
 };
 
 const ACCENT_COLOR = '#4E6D9E';
@@ -1693,12 +1821,224 @@ function showPage(id, btn) {
   detail.style.display = id === 'arch' ? '' : 'none';
 }
 
+function copyDsl() {
+  const ta = document.getElementById('dslCode');
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = document.getElementById('dslCopyBtn');
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy to clipboard`;
+      btn.classList.remove('copied');
+    }, 2200);
+  });
+}
+
 function showFlow(id, btn) {
   document.querySelectorAll('.flow-diagram').forEach(f=>f.classList.remove('on'));
   document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
   document.getElementById('flow-'+id).classList.add('on');
   if(btn) btn.classList.add('on');
 }
+
+const STRUCTURIZR_DSL = `workspace "IRIS Platform" "Intelligent Room & Interaction System by Vega, built by SumatoSoft" {
+
+  model {
+
+    // ── People ──────────────────────────────────────────────────────────────
+    customer = person "Customer" "End-user of IRIS pods. Books, pays, and controls the environment via voice or touch."
+    operator = person "Operator" "Operations staff monitoring fleet health, sessions, and pod status."
+    admin    = person "Admin"    "Manages pod inventory, device provisioning/commissioning, and regional configuration."
+
+    // ── External Systems ─────────────────────────────────────────────────────
+    checkoutCom = softwareSystem "Checkout.com"              "Payment gateway. Mada, Benefit Pay, Apple Pay, Google Pay, multi-entity routing." "External"
+    chargebee   = softwareSystem "Chargebee"                 "Subscription billing engine with GCC VAT/TRN invoicing."                         "External"
+    kiosoft     = softwareSystem "KioSoft / Robot Barista"   "F&B ordering platform. Beverage catalog, order placement, queue management."     "External"
+    adhanApi    = softwareSystem "Adhan Prayer Times API"    "City-specific prayer timetables for Adhan-aware scheduling."                      "External"
+    extErp      = softwareSystem "External ERP / CMMS"       "Factory stock, spare parts, RMA, F&B consumables. Outside IRIS scope."           "External"
+
+    // ── IRIS Platform ────────────────────────────────────────────────────────
+    iris = softwareSystem "IRIS Platform" "Cloud-to-hardware IoT platform powering smart private pods across the GCC region." {
+
+      // ── Client Applications ──────────────────────────────────────────────
+      mobileApp    = container "Mobile App"              "Booking, session management, IRIS voice interface, real-time pod state via Device Shadow."                         "React Native · iOS + Android"  "Client"
+      opsDashboard = container "Ops Dashboard"           "Fleet monitoring, pod health, session lookup, emergency overrides."                                               "React / Next.js"               "Client"
+      adminApp     = container "Inventory & Admin App"   "Region→Site→Cluster→Pod mgmt, IoT provisioning & commissioning, cultural config, audit logs."                    "React / Next.js"               "Client"
+
+      // ── AWS Entry Layer ──────────────────────────────────────────────────
+      cloudFront   = container "CloudFront + WAF"  "DDoS protection, edge caching, global CDN."                                                                            "AWS CloudFront · AWS WAF"      "Entry"
+      route53      = container "Route 53"          "Geographic DNS: api.ae.vel.ai → UAE · api.sa.vel.ai → Riyadh · api.bh.vel.ai → Bahrain · api.us.vel.ai → US-East."    "AWS Route 53"                  "Entry"
+      apiGateway   = container "API Gateway"       "REST and WebSocket API. JWT validation via Cognito."                                                                   "AWS API Gateway"               "Entry"
+      cognito      = container "AWS Cognito"       "Authentication, JWT issuance, MFA, OAuth 2.0. User pools per region."                                                  "AWS Cognito"                   "Entry"
+
+      // ── IRIS Backend (Node.js / TypeScript / ECS Fargate, built by SumatoSoft) ──
+      bookingService  = container "Booking Service"          "Pod availability, slot reservation, Adhan-aware scheduling, Ramadan rules, maintenance window logic."          "Node.js · TypeScript · ECS Fargate"  "Backend"
+      sessionService  = container "Session Service"          "Session lifecycle, token issuance, presence validation, grace period logic."                                   "Node.js · TypeScript · ECS Fargate"  "Backend"
+      userService     = container "User Service"             "Profile mgmt, subscription tier, entitlements, Right to be Forgotten, data anonymization."                    "Node.js · TypeScript · ECS Fargate"  "Backend"
+      intentRouter    = container "Intent Router"            "NLU dispatch, bounded action resolver, off-topic guard, mute state awareness."                                 "Node.js · TypeScript"                "Backend"
+      deviceCmdSvc    = container "Device Command Service"   "Command builder, device targeting via Device Shadow, acknowledgment tracking, retry logic."                   "Node.js · TypeScript · ECS Fargate"  "Backend"
+      notifService    = container "Notification Service"     "Push (APNs + FCM), SMS fallback, in-app banners, ops alerts."                                                 "Node.js · TypeScript · ECS Fargate"  "Backend"
+      regionalConfig  = container "Regional Config Service"  "Pricing, VAT rules, operating hours, cultural config (Adhan, Ramadan, RTL)."                                  "Node.js · TypeScript · ECS Fargate"  "Backend"
+      paymentService  = container "Payment Service"          "Usage metering, overage triggers, PropCo revenue routing, split payment (space + F&B), VAT invoice (TRN)."   "Node.js · TypeScript · ECS Fargate"  "Backend"
+
+      // ── IRIS Orchestration ───────────────────────────────────────────────
+      sessionSM      = container "Session State Machine"       "Lifecycle: booked → pre-warm → active → grace period → ended → reset."                                     "Node.js · State Machine"  "Orchestration"
+      disinfectionSM = container "Disinfection State Machine"  "Trigger: session_closed AND presence=empty. Blue-light + ionization. Delays if occupancy detected."        "Node.js · State Machine"  "Orchestration"
+      podLifecycle   = container "Pod Lifecycle Manager"       "Sleep/wake scheduling (T-2 min), maintenance windows, commissioning blocked state."                         "Node.js · State Machine"  "Orchestration"
+      usageMeter     = container "Usage Meter"                 "Duration × location_id rate, overage detection, credit deduction, subscription tier checks."               "Node.js · TypeScript"     "Orchestration"
+
+      // ── Voice & AI Layer (AWS Managed) ───────────────────────────────────
+      transcribe  = container "AWS Transcribe"       "Streaming STT. EN/AR/ES with Arabic↔English code-switching. In-region. Mute state: no audio captured."              "AWS Transcribe"                  "AI"
+      bedrock     = container "AWS Bedrock · Claude" "Bounded intent processing, action classification, off-topic detection. Context: session + pod state. ⚠ GCC TBD."    "AWS Bedrock · Anthropic Claude"  "AI"
+      polly       = container "AWS Polly"            "TTS synthesis. EN-ZA (South African female). Whisper mode per pod type. Adhan mute: output suppressed."              "AWS Polly"                       "AI"
+
+      // ── Data Layer (Per-Country AWS Region Silo) ─────────────────────────
+      rdsPostgres  = container "Amazon RDS PostgreSQL"  "Users, bookings, subscriptions, billing, pod registry, audit logs. Regional silo per country. GDPR/PDPL compliant."  "AWS RDS · PostgreSQL"         "Data"
+      dynamoDB     = container "Amazon DynamoDB"        "Session state (real-time), device shadow cache, presence events, telemetry snapshots, commissioning status."          "AWS DynamoDB"                 "Data"
+      elastiCache  = container "ElastiCache Redis"      "Session tokens, rate limiting, real-time pub/sub, availability cache."                                                "AWS ElastiCache · Redis"      "Data"
+      s3Storage    = container "Amazon S3"              "Voice transcripts (per-country), maintenance logs, invoices PDF, digital manifests."                                  "AWS S3"                       "Data"
+
+      // ── Async Messaging ──────────────────────────────────────────────────
+      sqsQueue    = container "Amazon SQS"         "Device command queue. FIFO ordered commands. Dead-letter queue."                          "AWS SQS"         "Messaging"
+      snsTopics   = container "Amazon SNS"         "Event fan-out, device telemetry alerts, session lifecycle events, commissioning alerts."  "AWS SNS"         "Messaging"
+      eventBridge = container "Amazon EventBridge" "Scheduled pod wake events, cleaning schedule triggers, Ramadan/Adhan rule events."        "AWS EventBridge" "Messaging"
+
+      // ── AWS IoT Core ─────────────────────────────────────────────────────
+      mqttBroker     = container "MQTT Broker"        "MQTT over TLS 1.2+. QoS 1. mTLS: X.509 device certs. Topic: vel/{region}/{site}/{cluster}/{pod}/{device}."               "AWS IoT Core"            "IoT"
+      deviceShadow   = container "Device Shadows"     "Desired state → Pi (HAL). Reported state ← Pi. Delta sync on reconnect. Read by Mobile App, write only via Backend."     "AWS IoT Device Shadow"   "IoT"
+      iotRules       = container "IoT Rules Engine"   "SQL rules: Telemetry → DynamoDB · Alert → SNS · Presence → Session SM · Anomaly → Ops alert."                            "AWS IoT Rules Engine"    "IoT"
+      deviceRegistry = container "Device Registry"   "Region→Site→Cluster→Pod→Device hierarchy. X.509 cert store. FAT/SAT/Commissioning Blocked status."                       "AWS IoT Registry"        "IoT"
+
+      // ── Raspberry Pi Software Stack (Node.js / TypeScript, built by SumatoSoft) ──
+      greengrass   = container "AWS IoT Greengrass v2"            "Cloud sync agent. X.509 cert identity (mTLS). Telemetry buffering. Delta sync on reconnect."                     "AWS IoT Greengrass v2 · Node.js"  "Edge"
+      localApiSvr  = container "Local API Server"                 "Serves local panel UI, accepts cloud commands, routes to HAL, holds local session cache."                        "Node.js · TypeScript"             "Edge"
+      hal          = container "HAL (Hardware Abstraction Layer)" "Unifies vendor protocols → common data model. Translates IRIS commands → Electric Set. ⚠ Protocol TBD."         "Node.js · TypeScript"             "Edge"
+      localSM      = container "Local State Machine"              "Offline session logic: active/wake/sleep/disinfect, local scheduler, mute LED control. ⚠ Offline scope TBD."    "Node.js · TypeScript"             "Edge"
+
+      // ── Local Panel (same Raspberry Pi device) ───────────────────────────
+      chromium      = container "Chromium · Kiosk Mode"  "Full-screen, no browser chrome, auto-restart on crash."                                                                       "Chromium"          "Edge"
+      localPanelApp = container "Local Panel App"        "Walk-up pod access, F&B, tap-to-pay, halal tags. Shared codebase with Mobile App. Falls back locally if cloud unreachable."   "React Native Web"  "Edge"
+
+      // ── Electric Set & Smart Devices (OEM factory pre-wired) ─────────────
+      electricSet  = container "Electric Set Control Board"  "OEM factory pre-wired. Aggregates all device connections. Single interface to Raspberry Pi. ⚠ Protocol TBD."  "OEM Hardware"      "Hardware"
+      bevenic      = container "Bevenic"                     "Availability Halo (green/amber/red), Privacy Halo (do-not-disturb), Temperature Sensor, CO2 Sensor."             "Smart Device"      "Hardware"
+      baumedi      = container "Baumedi"                     "Ionization unit and blue-light disinfection. Triggered by Disinfection State Machine."                           "Smart Device"      "Hardware"
+      sonteGlass   = container "Sonte Privacy Glass"         "Switchable opacity on command. sonte.eu."                                                                        "Smart Device"      "Hardware"
+      kaikuSpeaker = container "Kaiku Acoustic"              "Surround speakers, volume per pod type, whisper mode, Adhan mute trigger."                                       "Smart Device"      "Hardware"
+      itulaHvac    = container "Itula Micro-HVAC"            "HEPA filtration, temperature setpoint control, airflow level control. itula.fi."                                 "Smart Device"      "Hardware"
+      accessCtrl   = container "Access Control"              "Smart lock, biometric/app unlock, session handoff, egress always enabled. ⚠ Manufacturer TBD."                  "Smart Device"      "Hardware"
+      muteLed      = container "Mute LED Indicator"          "Physical LED — visual proof AI is not listening. GCC privacy requirement. Controlled by Local SM via HAL."       "Hardware"          "Hardware"
+
+      // ── Robot Barista (site-installed separately) ────────────────────────
+      robotBarista = container "Robot Barista Unit" "Site-installed separately. Connects via KioSoft API (cloud). Not controlled via HAL or MQTT. ⚠ API spec TBD." "OEM Robot Hardware" "Hardware"
+    }
+
+    // ── Relationships ────────────────────────────────────────────────────────
+
+    customer -> mobileApp    "Books pods, controls environment via voice"
+    operator -> opsDashboard "Monitors fleet health, handles incidents"
+    admin    -> adminApp     "Provisions devices, manages configuration"
+
+    mobileApp    -> cloudFront "HTTPS"
+    opsDashboard -> cloudFront "HTTPS"
+    adminApp     -> cloudFront "HTTPS"
+    cloudFront   -> route53
+    route53      -> apiGateway
+    apiGateway   -> cognito "JWT validation"
+
+    mobileApp -> deviceShadow "Read shadow only (AWS IoT SDK) — real-time temp, CO2, light"
+
+    mobileApp    -> transcribe "Audio stream (only when not muted)"
+    localPanelApp -> transcribe "Audio stream (only when not muted)"
+    transcribe   -> intentRouter "Transcript text"
+    intentRouter -> bedrock      "Transcript + session context"
+    bedrock      -> intentRouter "Structured action"
+    bedrock      -> polly        "Response text"
+    polly        -> mobileApp    "Audio stream"
+    polly        -> localPanelApp "Audio stream"
+
+    apiGateway -> bookingService "REST"
+    apiGateway -> sessionService "REST / WebSocket"
+    apiGateway -> userService    "REST"
+    apiGateway -> intentRouter   "REST"
+    apiGateway -> deviceCmdSvc   "REST"
+    apiGateway -> notifService   "REST"
+    apiGateway -> paymentService "REST"
+
+    sessionService -> sessionSM    "Lifecycle events"
+    sessionSM      -> disinfectionSM
+    sessionSM      -> podLifecycle
+    sessionSM      -> usageMeter
+    bookingService -> regionalConfig "Regional rules"
+    bookingService -> adhanApi       "Prayer time data"
+
+    deviceCmdSvc -> sqsQueue  "Device commands (FIFO)"
+    notifService -> snsTopics
+    podLifecycle   -> eventBridge
+    disinfectionSM -> eventBridge
+
+    bookingService -> rdsPostgres "Read / write"
+    sessionService -> rdsPostgres "Read / write"
+    userService    -> rdsPostgres "Read / write"
+    paymentService -> rdsPostgres "Read / write"
+    sessionService -> dynamoDB    "Session state"
+    iotRules       -> dynamoDB    "Telemetry snapshots"
+    transcribe     -> s3Storage   "Transcript stored in-region (biometric-class)"
+    adminApp       -> s3Storage   "Digital manifest import (OEM CSV / API)"
+
+    paymentService -> checkoutCom "Tokenized charge — split: space + F&B"
+    paymentService -> chargebee   "Subscription + overage events"
+    usageMeter     -> chargebee   "Subscription + overage events"
+    sessionService -> kiosoft     "Menu / order / status"
+    bookingService -> kiosoft     "Menu / order / status"
+    userService    -> extErp      "Asset data only"
+    robotBarista   -> kiosoft     "KioSoft API (cloud connection)"
+
+    sqsQueue    -> mqttBroker
+    eventBridge -> mqttBroker
+    iotRules    -> snsTopics "Alert"
+    mqttBroker  -> deviceShadow "State sync"
+    deviceShadow -> deviceRegistry
+    mqttBroker  -> iotRules
+    adminApp    -> deviceRegistry "X.509 cert provisioning & device identity"
+
+    mqttBroker   -> greengrass "MQTT over TLS · mTLS X.509 · Desired commands down · Telemetry up"
+    greengrass   -> localApiSvr
+    greengrass   -> localSM
+    localApiSvr  -> hal
+    localApiSvr  -> localSM
+    localSM      -> hal "Wake / sleep / disinfect / mute LED commands"
+    chromium     -> localPanelApp
+    localPanelApp -> localApiSvr "HTTP local — device control + session state"
+    localPanelApp -> apiGateway  "HTTPS — booking + payment (requires cloud)"
+
+    hal         -> electricSet  "Protocol TBD (Modbus TCP / RTU / Custom binary / REST / GPIO)"
+    electricSet -> bevenic      "OEM factory pre-wired"
+    electricSet -> baumedi      "OEM factory pre-wired"
+    electricSet -> sonteGlass   "OEM factory pre-wired"
+    electricSet -> kaikuSpeaker "OEM factory pre-wired"
+    electricSet -> itulaHvac    "OEM factory pre-wired"
+    electricSet -> accessCtrl   "OEM factory pre-wired"
+    electricSet -> muteLed      "OEM factory pre-wired"
+  }
+
+  views {
+    systemContext iris "SystemContext" "IRIS system context — actors and external dependencies" {
+      include *
+      autolayout lr
+    }
+
+    container iris "Containers" "All containers within the IRIS Platform" {
+      include *
+      autolayout lr
+    }
+
+    theme default
+  }
+
+}`;
+
+document.getElementById('dslCode').value = STRUCTURIZR_DSL;
 
 buildLayerNav();
 buildArch();
